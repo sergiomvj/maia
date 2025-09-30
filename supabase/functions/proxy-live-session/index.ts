@@ -56,7 +56,7 @@ function pcmToWav(pcmData: ArrayBuffer): Blob {
 // --- SHARED TOOL/FUNCTION DECLARATIONS ---
 // Gemini format
 const geminiFunctionDeclarations: FunctionDeclaration[] = [
-    { name: 'createReminder', description: 'Creates a reminder', parameters: { type: Type.OBJECT, properties: { task: { type: Type.STRING }, dueDate: { type: Type.STRING }, dueTime: { type: Type.STRING }, priority: { type: Type.STRING } }, required: ['task'] } },
+    { name: 'createReminder', description: "Creates a reminder with a task, and optional due date, due time, and priority ('High', 'Medium', or 'Low').", parameters: { type: Type.OBJECT, properties: { task: { type: Type.STRING }, dueDate: { type: Type.STRING }, dueTime: { type: Type.STRING }, priority: { type: Type.STRING } }, required: ['task'] } },
     { name: 'saveNote', description: 'Saves a note', parameters: { type: Type.OBJECT, properties: { content: { type: Type.STRING } }, required: ['content'] } },
     { name: 'searchNotes', description: 'Searches notes', parameters: { type: Type.OBJECT, properties: { query: { type: Type.STRING } }, required: ['query'] } },
     { name: 'addShoppingListItem', description: 'Adds to shopping list', parameters: { type: Type.OBJECT, properties: { item: { type: Type.STRING }, quantity: { type: Type.NUMBER } }, required: ['item'] } },
@@ -71,7 +71,8 @@ const openAIFunctionDeclarations: OpenAI.Chat.Completions.ChatCompletionTool[] =
         description: f.description,
         parameters: {
             type: 'object',
-            properties: Object.fromEntries(Object.entries(f.parameters.properties!).map(([key, val]) => [key, { type: (val.type as string).toLowerCase(), description: val.description }])),
+            // FIX: Cast `val` to `any` to work around incorrect type inference.
+            properties: Object.fromEntries(Object.entries(f.parameters.properties!).map(([key, val]) => [key, { type: ((val as any).type as string).toLowerCase(), description: (val as any).description }])),
             required: f.parameters.required || [],
         },
     },
@@ -79,12 +80,14 @@ const openAIFunctionDeclarations: OpenAI.Chat.Completions.ChatCompletionTool[] =
 
 
 // --- MAIN SERVER LOGIC ---
-(Deno as any).serve(async (req: Request) => {
+// FIX: Cast Deno to any via globalThis to satisfy non-Deno type checkers.
+(globalThis as any).Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  const { socket: clientWs, response } = (Deno as any).upgradeWebSocket(req);
+  // FIX: Cast Deno to any via globalThis to satisfy non-Deno type checkers.
+  const { socket: clientWs, response } = (globalThis as any).Deno.upgradeWebSocket(req);
   
   let user: any = null;
   let apiKey: string | null = null;
@@ -112,8 +115,10 @@ const openAIFunctionDeclarations: OpenAI.Chat.Completions.ChatCompletionTool[] =
     if (message.type === 'auth') {
       try {
         const supabaseClient = createClient(
-          (Deno as any).env.get('SUPABASE_URL') ?? '',
-          (Deno as any).env.get('SUPABASE_ANON_KEY') ?? '',
+          // FIX: Cast Deno to any via globalThis to satisfy non-Deno type checkers.
+          (globalThis as any).Deno.env.get('SUPABASE_URL') ?? '',
+          // FIX: Cast Deno to any via globalThis to satisfy non-Deno type checkers.
+          (globalThis as any).Deno.env.get('SUPABASE_ANON_KEY') ?? '',
           { global: { headers: { Authorization: `Bearer ${message.token}` } } }
         );
 
@@ -122,8 +127,10 @@ const openAIFunctionDeclarations: OpenAI.Chat.Completions.ChatCompletionTool[] =
         user = authUser;
 
         const serviceClient = createClient(
-            (Deno as any).env.get('SUPABASE_URL') ?? '',
-            (Deno as any).env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+            // FIX: Cast Deno to any via globalThis to satisfy non-Deno type checkers.
+            (globalThis as any).Deno.env.get('SUPABASE_URL') ?? '',
+            // FIX: Cast Deno to any via globalThis to satisfy non-Deno type checkers.
+            (globalThis as any).Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
         );
 
         const { data: profile, error: profileError } = await serviceClient
@@ -138,7 +145,8 @@ const openAIFunctionDeclarations: OpenAI.Chat.Completions.ChatCompletionTool[] =
         
         provider = profile.llm_provider || 'gemini';
         
-        const encryptionKey = (Deno as any).env.get('ENCRYPTION_KEY');
+        // FIX: Cast Deno to any via globalThis to satisfy non-Deno type checkers.
+        const encryptionKey = (globalThis as any).Deno.env.get('ENCRYPTION_KEY');
         if (!encryptionKey) throw new Error("Server config error: ENCRYPTION_KEY not set.");
         
         apiKey = await decrypt(profile.encrypted_api_key, encryptionKey);
@@ -158,7 +166,7 @@ const openAIFunctionDeclarations: OpenAI.Chat.Completions.ChatCompletionTool[] =
                          clientWs.send(JSON.stringify({ type: 'transcription', payload: { ...msg.serverContent.inputTranscription, speaker: 'user', kind: 'input' } }));
                        }
                        if (msg.serverContent?.outputTranscription) {
-                         clientWs.send(JSON.stringify({ type: 'transcription', payload: { ...msg.serverContent.outputTranscription, speaker: 'maria', kind: 'output' } }));
+                         clientWs.send(JSON.stringify({ type: 'transcription', payload: { ...msg.serverContent.outputTranscription, speaker: 'maia', kind: 'output' } }));
                        }
                        const audioData = msg.serverContent?.modelTurn?.parts[0]?.inlineData.data;
                        if (audioData) { clientWs.send(JSON.stringify({ type: 'audio', payload: { data: audioData } })); }
@@ -228,7 +236,7 @@ const openAIFunctionDeclarations: OpenAI.Chat.Completions.ChatCompletionTool[] =
                            }
                         }
                     } else if (responseMessage.content) {
-                        clientWs.send(JSON.stringify({ type: 'transcription', payload: { text: responseMessage.content, speaker: 'maria', isFinal: true, kind: 'output' } }));
+                        clientWs.send(JSON.stringify({ type: 'transcription', payload: { text: responseMessage.content, speaker: 'maia', isFinal: true, kind: 'output' } }));
 
                         const ttsResponse = await openAIClient!.audio.speech.create({ model: "tts-1", voice: "nova", input: responseMessage.content, response_format: 'pcm' });
                         const audioBytes = new Uint8Array(await ttsResponse.arrayBuffer());

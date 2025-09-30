@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { User, Profile } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
+import Icon from '../components/Icon';
+import { ICONS } from '../constants';
 
 interface ProfilePageProps {
   user: User;
@@ -10,10 +13,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [fullName, setFullName] = useState('');
   const [apiKey, setApiKey] = useState('');
+  const [showApiKey, setShowApiKey] = useState(false);
   const [email, setEmail] = useState('');
   const [llmProvider, setLlmProvider] = useState<Profile['llm_provider']>('gemini');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const { t } = useLanguage();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -37,7 +42,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user }) => {
         setEmail(user.email || '');
 
       } catch (err: any) {
-        setError('Failed to load profile. Please ensure you have set up the `profiles` table in Supabase as per the instructions in `supabaseClient.ts`.');
+        setError(t('profileLoadError'));
         console.error(err);
       } finally {
         setLoading(false);
@@ -45,7 +50,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user }) => {
     };
 
     fetchProfile();
-  }, [user]);
+  }, [user, t]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +73,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user }) => {
 
         if (userError) throw userError;
 
-        setMessage('Profile updated successfully!');
+        setMessage(t('profileUpdateSuccess'));
         
     } catch (err: any) {
         setError(err.message || 'Failed to update profile.');
@@ -80,7 +85,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user }) => {
   const handleUpdateApiKey = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!apiKey) {
-      setError('Please enter an API key.');
+      setError(t('profileApiKeyRequired'));
       return;
     }
     setLoading(true);
@@ -94,7 +99,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user }) => {
 
         if (error) throw error;
         
-        setMessage('API Key saved securely. Please start a new session for it to take effect.');
+        setMessage(t('profileApiKeySaveSuccess'));
         setApiKey('');
 
     } catch (err: any) {
@@ -104,7 +109,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user }) => {
     }
   };
   
-  const providerLabels = {
+  const providerLabels: {[key: string]: string} = {
     gemini: "Google Gemini",
     openai: "OpenAI",
     anthropic: "Anthropic"
@@ -112,20 +117,20 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user }) => {
 
   return (
     <div className="p-8 h-full overflow-y-auto">
-      <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Your Profile</h2>
+      <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">{t('profileTitle')}</h2>
       <div className="max-w-2xl mx-auto space-y-8">
         {/* Profile Details Form */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-8">
-            <h3 className="text-xl font-semibold mb-6">Personal Information</h3>
+            <h3 className="text-xl font-semibold mb-6">{t('profilePersonalInfo')}</h3>
             {loading ? (
-                <div className="text-center text-gray-500 dark:text-gray-400">Loading profile...</div>
+                <div className="text-center text-gray-500 dark:text-gray-400">{t('profileLoading')}</div>
             ) : (
                 <form onSubmit={handleUpdateProfile} className="space-y-6">
                     {error && <div className="p-3 bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 rounded-md border border-red-200 dark:border-red-800 text-sm">{error}</div>}
                     {message && !error && <div className="p-3 bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 rounded-md border border-green-200 dark:border-green-800 text-sm">{message}</div>}
 
                     <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email Address</label>
+                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('profileEmailLabel')}</label>
                         <div className="mt-1">
                             <input
                                 id="email"
@@ -138,14 +143,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user }) => {
                     </div>
 
                     <div>
-                        <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
+                        <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('profileNameLabel')}</label>
                         <div className="mt-1">
                             <input
                                 id="fullName"
                                 type="text"
                                 value={fullName}
                                 onChange={(e) => setFullName(e.target.value)}
-                                placeholder="Your Name"
+                                placeholder={t('profileNamePlaceholder')}
                                 className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
                             />
                         </div>
@@ -157,7 +162,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user }) => {
                             disabled={loading}
                             className="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {loading ? 'Saving...' : 'Save Changes'}
+                            {loading ? t('profileSaving') : t('profileSaveChanges')}
                         </button>
                     </div>
                 </form>
@@ -166,13 +171,13 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user }) => {
         
         {/* API Key Form */}
          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-8">
-            <h3 className="text-xl font-semibold mb-2">Provider Settings</h3>
+            <h3 className="text-xl font-semibold mb-2">{t('profileProviderSettings')}</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                Your API key is encrypted and stored securely on the server. It is never exposed to the browser.
+                {t('profileApiNote')}
             </p>
             <form onSubmit={handleUpdateApiKey} className="space-y-6">
                  <div>
-                    <label htmlFor="llmProvider" className="block text-sm font-medium text-gray-700 dark:text-gray-300">LLM Provider</label>
+                    <label htmlFor="llmProvider" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('profileLlmProvider')}</label>
                     <div className="mt-1">
                         <select
                             id="llmProvider"
@@ -187,26 +192,34 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user }) => {
                     </div>
                 </div>
                  <div>
-                    <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{providerLabels[llmProvider!]} API Key</label>
-                    <div className="mt-1">
+                    <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('profileApiKeyLabel', { provider: providerLabels[llmProvider!] })}</label>
+                    <div className="mt-1 relative">
                         <input
                             id="apiKey"
-                            type="password"
+                            type={showApiKey ? 'text' : 'password'}
                             value={apiKey}
                             onChange={(e) => setApiKey(e.target.value)}
-                            placeholder="Enter your new API key"
-                            className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
+                            placeholder={t('profileApiKeyPlaceholder')}
+                            className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm px-3 py-2 pr-10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
                         />
+                         <button
+                            type="button"
+                            onClick={() => setShowApiKey(!showApiKey)}
+                            className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none"
+                            aria-label={showApiKey ? t('profileHideApiKey') : t('profileShowApiKey')}
+                        >
+                            <Icon path={showApiKey ? ICONS.eyeSlash : ICONS.eye} className="w-5 h-5" />
+                        </button>
                     </div>
                 </div>
                  <div className="flex justify-between items-center">
-                     <p className="text-sm text-gray-500">Changes to Provider or API key require a new session.</p>
+                     <p className="text-sm text-gray-500">{t('profileApiSessionNote')}</p>
                     <button
                         type="submit"
                         disabled={loading}
                         className="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {loading ? 'Saving...' : 'Save API Key'}
+                        {loading ? t('profileSaving') : t('profileSaveApiKey')}
                     </button>
                 </div>
             </form>

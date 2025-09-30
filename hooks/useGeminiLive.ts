@@ -1,10 +1,10 @@
-
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import { TranscriptEntry, Reminder, Note, ShoppingListItem, CalendarEvent, User, ServerToClientMessage, ChatHistoryEntry } from '../types';
 import { createBlob, decode, decodeAudioData } from '../utils/audioUtils';
 import { playSuccessSound } from '../utils/audioEffects';
 import { PRIORITY_ORDER } from '../constants';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const INPUT_SAMPLE_RATE = 16000;
 const OUTPUT_SAMPLE_RATE = 24000;
@@ -22,6 +22,8 @@ export const useGeminiLive = (user: User | null) => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [shoppingList, setShoppingList] = useState<ShoppingListItem[]>([]);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+
+  const { t } = useLanguage();
 
   const wsRef = useRef<WebSocket | null>(null);
   const inputAudioContextRef = useRef<AudioContext | null>(null);
@@ -74,7 +76,7 @@ export const useGeminiLive = (user: User | null) => {
         const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'there';
         const welcomeMessage: TranscriptEntry = {
             speaker: 'system',
-            text: `Welcome back, ${userName}! How can I help you today?`,
+            text: t('welcomeMessage', { userName }),
             isFinal: true,
         };
         setTranscript(prev => loadedTranscript.length > 0 ? loadedTranscript : [welcomeMessage]);
@@ -87,7 +89,7 @@ export const useGeminiLive = (user: User | null) => {
       }
     };
     fetchAllData();
-  }, [user]);
+  }, [user, t]);
 
   const sortedReminders = useMemo(() => {
     return [...reminders].sort((a, b) => {
@@ -223,12 +225,12 @@ export const useGeminiLive = (user: User | null) => {
         const { task, dueDate, dueTime, priority } = toolCall.args as { task: string; dueDate?: string; dueTime?: string, priority?: 'High' | 'Medium' | 'Low' };
         const { data: newReminder, error } = await supabase.from('reminders').insert({ task, due_date: dueDate, due_time: dueTime, priority: priority || 'Medium', user_id: user.id }).select().single();
         if (error) { console.error('DB Error:', error); toolResponseResult = "Failed to save reminder."; }
-        else if (newReminder) { setReminders(prev => [newReminder, ...prev]); systemMessageText = `Reminder set: "${task}"`; playSuccessSound(); }
+        else if (newReminder) { setReminders(prev => [newReminder, ...prev]); systemMessageText = t('reminderSet', { task }); playSuccessSound(); }
     } else if (toolCall.name === 'saveNote') {
         const { content } = toolCall.args as { content: string };
         const { data: newNote, error } = await supabase.from('notes').insert({ content, user_id: user.id }).select().single();
         if (error) { console.error('DB Error:', error); toolResponseResult = "Failed to save note."; }
-        else if (newNote) { setNotes(prev => [newNote, ...prev]); systemMessageText = `Note saved.`; playSuccessSound(); }
+        else if (newNote) { setNotes(prev => [newNote, ...prev]); systemMessageText = t('noteSaved'); playSuccessSound(); }
     } else if (toolCall.name === 'searchNotes') {
         const { query } = toolCall.args as { query: string };
         const { data, error } = await supabase.from('notes').select('content').ilike('content', `%${query}%`);
@@ -237,11 +239,11 @@ export const useGeminiLive = (user: User | null) => {
     } else if (toolCall.name === 'addShoppingListItem') {
         const { item, quantity } = toolCall.args as { item: string; quantity?: number };
         await addShoppingListItem(item, quantity);
-        systemMessageText = `Added "${item}" to your shopping list.`;
+        systemMessageText = t('shoppingListItemAdded', { item });
     } else if (toolCall.name === 'removeShoppingListItem') {
         const { item } = toolCall.args as { item: string };
         await removeShoppingListItem(item);
-        systemMessageText = `Removed "${item}" from your shopping list.`;
+        systemMessageText = t('shoppingListItemRemoved', { item });
     } else if (toolCall.name === 'getCalendarEvents') {
         const mockEvents: CalendarEvent[] = [
             { id: '1', title: 'Team Standup', startTime: '09:00', endTime: '09:30', description: 'Daily project sync' },
@@ -260,7 +262,7 @@ export const useGeminiLive = (user: User | null) => {
         const response = { type: 'toolResponse', payload: { functionResponses: { id: toolCall.id, name: toolCall.name, response: { result: toolResponseResult } } } };
         wsRef.current.send(JSON.stringify(response));
     }
-  }, [user, notes, addShoppingListItem, removeShoppingListItem]);
+  }, [user, notes, addShoppingListItem, removeShoppingListItem, t]);
 
   const startSession = useCallback(async () => {
     if (isConnecting || isConnected) return;

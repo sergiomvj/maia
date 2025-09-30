@@ -49,18 +49,20 @@ export interface CalendarEvent {
 export interface ChatHistoryEntry {
   id: string;
   user_id: string;
-  speaker: 'user' | 'maria' | 'system';
+  speaker: 'user' | 'maia' | 'system';
   text: string;
   created_at: string;
 }
 
 
 export interface TranscriptEntry {
-  speaker: 'user' | 'maria' | 'system';
+  speaker: 'user' | 'maia' | 'system';
   text: string;
   isFinal: boolean;
   id?: string; // Corresponds to ChatHistoryEntry id
 }
+
+export type LegalPageType = 'about' | 'privacy' | 'terms';
 
 // Types for WebSocket communication with the proxy
 export type ClientToServerMessage =
@@ -70,6 +72,6 @@ export type ClientToServerMessage =
 export type ServerToClientMessage =
   | { type: 'error'; payload: string }
   | { type: 'toolCall'; payload: any }
-  | { type: 'transcription'; payload: { speaker: 'user' | 'maria'; text: string; isFinal: boolean; kind: 'input' | 'output' } }
+  | { type: 'transcription'; payload: { speaker: 'user' | 'maia'; text: string; isFinal: boolean; kind: 'input' | 'output' } }
   | { type: 'audio'; payload: { data: string } }
   | { type: 'connectionReady' };

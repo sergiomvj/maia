@@ -1,5 +1,5 @@
 {
-  "name": "maria---voice-assistant",
+  "name": "maia---voice-assistant",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,7 +13,8 @@
     "react-dom": "^19.1.1",
     "@google/genai": "^1.21.0",
     "@supabase/supabase-js": "2",
-    "openai": "^5.23.1"
+    "openai": "^5.23.1",
+    "deno.ns": "^0.8.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

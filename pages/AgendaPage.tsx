@@ -2,6 +2,7 @@ import React from 'react';
 import { CalendarEvent } from '../types';
 import Icon from '../components/Icon';
 import { ICONS } from '../constants';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface AgendaPageProps {
   events: CalendarEvent[];
@@ -26,9 +27,10 @@ const AgendaItem: React.FC<{ event: CalendarEvent, isLast: boolean }> = ({ event
 );
 
 const AgendaPage: React.FC<AgendaPageProps> = ({ events }) => {
+  const { t } = useLanguage();
   return (
     <div className="p-8 h-full overflow-y-auto">
-      <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Today's Agenda</h2>
+      <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">{t('agendaTitle')}</h2>
       {events.length > 0 ? (
         <div className="flow-root">
           <ul>
@@ -42,8 +44,8 @@ const AgendaPage: React.FC<AgendaPageProps> = ({ events }) => {
       ) : (
         <div className="text-center py-16 px-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
             <Icon path={ICONS.agenda} className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-500" />
-            <h3 className="text-xl font-semibold text-gray-800 dark:text-white">Your agenda is clear!</h3>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">Ask MarIA "What's on my agenda?" to sync your calendar.</p>
+            <h3 className="text-xl font-semibold text-gray-800 dark:text-white">{t('agendaEmpty')}</h3>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">{t('agendaEmptyPrompt')}</p>
         </div>
       )}
     </div>

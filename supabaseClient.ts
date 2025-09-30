@@ -42,23 +42,51 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies to ensure a clean slate
 DROP POLICY IF EXISTS "Users can view their own profile." ON public.profiles;
 DROP POLICY IF EXISTS "Users can insert their own profile." ON public.profiles;
 DROP POLICY IF EXISTS "Users can update their own profile." ON public.profiles;
+DROP POLICY IF EXISTS "Allow trigger to insert new user profiles" ON public.profiles;
 
-CREATE POLICY "Users can view their own profile." ON public.profiles FOR SELECT USING ( auth.uid() = id );
-CREATE POLICY "Users can insert their own profile." ON public.profiles FOR INSERT WITH CHECK ( auth.uid() = id );
-CREATE POLICY "Users can update their own profile." ON public.profiles FOR UPDATE USING ( auth.uid() = id ) WITH CHECK ( auth.uid() = id );
+-- RLS Policies for the 'profiles' table
+
+-- Policy 1: Allow users to view their own profile.
+CREATE POLICY "Users can view their own profile." ON public.profiles
+  FOR SELECT USING ( auth.uid() = id );
+
+-- Policy 2: Allow users to insert their own profile.
+CREATE POLICY "Users can insert their own profile." ON public.profiles
+  FOR INSERT WITH CHECK ( auth.uid() = id );
+
+-- Policy 3: Allow users to update their own profile.
+CREATE POLICY "Users can update their own profile." ON public.profiles
+  FOR UPDATE USING ( auth.uid() = id ) WITH CHECK ( auth.uid() = id );
+
+-- DEFINITIVE FIX FOR SIGN-UP ERROR:
+-- This policy allows the database's internal 'postgres' user (which runs the trigger function)
+-- to insert rows into the profiles table. The trigger is what creates a user's profile
+-- automatically when they sign up. Without this policy, RLS blocks the trigger, and sign-up fails.
+CREATE POLICY "Allow trigger to insert new user profiles" ON public.profiles
+  FOR INSERT TO postgres WITH CHECK (true);
+
 
 -- This function automatically creates a profile for a new user.
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+-- This is a security-sensitive function. It runs with the permissions of the
+-- role that created it (the 'postgres' user), not the user who is signing up.
+SECURITY DEFINER
+-- We explicitly set the search path to prevent any potential search path
+-- hijacking attacks and ensure the function can find the 'profiles' table.
+SET search_path = public
+AS $$
 BEGIN
   INSERT INTO public.profiles (id, full_name, llm_provider)
   VALUES (new.id, new.raw_user_meta_data->>'full_name', 'gemini');
   RETURN new;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- Trigger the function when a new user signs up.
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;

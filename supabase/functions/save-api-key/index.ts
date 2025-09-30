@@ -31,8 +31,8 @@ async function encrypt(data: string, secret: string): Promise<string> {
 }
 
 
-// FIX: Cast Deno to `any` to work around incorrect type definitions in the environment.
-(Deno as any).serve(async (req: Request) => {
+// FIX: Cast Deno to any via globalThis to satisfy non-Deno type checkers.
+(globalThis as any).Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -45,10 +45,10 @@ async function encrypt(data: string, secret: string): Promise<string> {
 
     // Create a Supabase client with the Auth context of the logged-in user.
     const supabaseClient = createClient(
-      // FIX: Cast Deno to `any` to work around incorrect type definitions in the environment.
-      (Deno as any).env.get('SUPABASE_URL') ?? '',
-      // FIX: Cast Deno to `any` to work around incorrect type definitions in the environment.
-      (Deno as any).env.get('SUPABASE_ANON_KEY') ?? '',
+      // FIX: Cast Deno to any via globalThis to satisfy non-Deno type checkers.
+      (globalThis as any).Deno.env.get('SUPABASE_URL') ?? '',
+      // FIX: Cast Deno to any via globalThis to satisfy non-Deno type checkers.
+      (globalThis as any).Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
     )
 
@@ -62,8 +62,8 @@ async function encrypt(data: string, secret: string): Promise<string> {
     }
 
     // Encrypt the API key.
-    // FIX: Cast Deno to `any` to work around incorrect type definitions in the environment.
-    const encryptionKey = (Deno as any).env.get('ENCRYPTION_KEY');
+    // FIX: Cast Deno to any via globalThis to satisfy non-Deno type checkers.
+    const encryptionKey = (globalThis as any).Deno.env.get('ENCRYPTION_KEY');
     if (!encryptionKey) {
         throw new Error('ENCRYPTION_KEY is not set in environment variables.');
     }
@@ -71,10 +71,10 @@ async function encrypt(data: string, secret: string): Promise<string> {
     
     // Create a service role client to update the user's profile.
     const serviceClient = createClient(
-        // FIX: Cast Deno to `any` to work around incorrect type definitions in the environment.
-        (Deno as any).env.get('SUPABASE_URL') ?? '',
-        // FIX: Cast Deno to `any` to work around incorrect type definitions in the environment.
-        (Deno as any).env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        // FIX: Cast Deno to any via globalThis to satisfy non-Deno type checkers.
+        (globalThis as any).Deno.env.get('SUPABASE_URL') ?? '',
+        // FIX: Cast Deno to any via globalThis to satisfy non-Deno type checkers.
+        (globalThis as any).Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
     
     const profileUpdate: { encrypted_api_key: string, llm_provider?: string } = { encrypted_api_key: encryptedApiKey };

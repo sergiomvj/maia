@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useGeminiLive } from '../hooks/useGeminiLive';
 import Icon from '../components/Icon';
 import { ICONS } from '../constants';
 import { ShoppingListItem } from '../types';
 import { playToggleSound, playClearSound } from '../utils/audioEffects';
+import { useLanguage } from '../contexts/LanguageContext';
 
 type GeminiLiveHook = ReturnType<typeof useGeminiLive>;
 
@@ -44,6 +44,7 @@ const ShoppingItem: React.FC<{
 
 const ShoppingListPage: React.FC<ShoppingListPageProps> = ({ geminiLive }) => {
   const { shoppingList, addShoppingListItem, removeShoppingListItem, toggleShoppingListItem } = geminiLive;
+  const { t } = useLanguage();
   const [newItem, setNewItem] = useState('');
 
   const handleAddItem = (e: React.FormEvent) => {
@@ -70,35 +71,35 @@ const ShoppingListPage: React.FC<ShoppingListPageProps> = ({ geminiLive }) => {
 
   return (
     <div className="p-8 h-full overflow-y-auto">
-      <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Shopping List</h2>
+      <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">{t('shoppingListTitle')}</h2>
 
       <form onSubmit={handleAddItem} className="flex gap-4 mb-8">
         <input
           type="text"
           value={newItem}
           onChange={(e) => setNewItem(e.target.value)}
-          placeholder="Add a new item (e.g., '2 cartons of milk')"
+          placeholder={t('shoppingListPlaceholder')}
           className="flex-grow bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
         />
         <button type="submit" className="bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
-          Add Item
+          {t('shoppingListAddItem')}
         </button>
       </form>
 
       {shoppingList.length > 0 ? (
         <div className="space-y-4">
           <div>
-            <h3 className="text-xl font-semibold mb-4">To Get</h3>
+            <h3 className="text-xl font-semibold mb-4">{t('shoppingListToGet')}</h3>
              <div className="space-y-3">
                 {activeItems.map(item => (
                     <ShoppingItem key={item.id} item={item} onToggle={handleToggle} onRemove={handleRemove} />
                 ))}
-                 {activeItems.length === 0 && <p className="text-gray-500">All items collected!</p>}
+                 {activeItems.length === 0 && <p className="text-gray-500">{t('shoppingListAllCollected')}</p>}
             </div>
           </div>
 
            {collectedItems.length > 0 && <details className="pt-6">
-                <summary className="text-lg font-semibold cursor-pointer text-gray-600 dark:text-gray-400">Collected ({collectedItems.length})</summary>
+                <summary className="text-lg font-semibold cursor-pointer text-gray-600 dark:text-gray-400">{t('shoppingListCollected')} ({collectedItems.length})</summary>
                 <div className="space-y-3 mt-4">
                     {collectedItems.map(item => (
                         <ShoppingItem key={item.id} item={item} onToggle={handleToggle} onRemove={handleRemove} />
@@ -109,8 +110,8 @@ const ShoppingListPage: React.FC<ShoppingListPageProps> = ({ geminiLive }) => {
       ) : (
          <div className="text-center py-16 px-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
             <Icon path={ICONS.shoppingList} className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-500" />
-            <h3 className="text-xl font-semibold text-gray-800 dark:text-white">Your shopping list is empty</h3>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">Use the input above or just say "Hey MarIA, add apples to my shopping list".</p>
+            <h3 className="text-xl font-semibold text-gray-800 dark:text-white">{t('shoppingListEmpty')}</h3>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">{t('shoppingListEmptyPrompt')}</p>
         </div>
       )}
     </div>

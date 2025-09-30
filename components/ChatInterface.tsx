@@ -4,6 +4,7 @@ import Waveform from './Waveform';
 import { ICONS, PRIORITY_COLORS } from '../constants';
 import { TranscriptEntry, Reminder, Note } from '../types';
 import { useGeminiLive } from '../hooks/useGeminiLive';
+import { useLanguage } from '../contexts/LanguageContext';
 
 type GeminiLiveHook = ReturnType<typeof useGeminiLive>;
 
@@ -86,6 +87,7 @@ const NoteItem: React.FC<{ note: Note; onDelete: (id: string) => void }> = ({ no
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ geminiLive }) => {
   const { isConnecting, isConnected, isSpeaking, isLoadingData, error, transcript, reminders, notes, startSession, closeSession, toggleReminderCompletion, deleteNote } = geminiLive;
+  const { t } = useLanguage();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -109,21 +111,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ geminiLive }) => {
     <div className="flex flex-col h-full overflow-hidden bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 m-4">
       <div className="flex-shrink-0 p-4 border-b border-gray-200 dark:border-gray-700 overflow-y-auto max-h-[45%]">
         {isLoadingData ? (
-             <div className="text-center text-gray-500">Loading your data...</div>
+             <div className="text-center text-gray-500">{t('chatLoading')}</div>
         ) : (
             <>
             {reminders.length > 0 && (
               <div className="mb-4">
                   <div className="flex items-center mb-3">
                       <Icon path={ICONS.reminders} className="w-5 h-5 mr-2 text-gray-500 dark:text-gray-400" />
-                      <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Active Reminders</h3>
+                      <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">{t('chatActiveReminders')}</h3>
                   </div>
                   <div className="space-y-2">
                       {activeReminders.map(r => <ReminderItem key={r.id} reminder={r} onToggle={toggleReminderCompletion} />)}
-                      {activeReminders.length === 0 && <p className="text-xs text-gray-500 text-center py-2">All reminders completed!</p>}
+                      {activeReminders.length === 0 && <p className="text-xs text-gray-500 text-center py-2">{t('chatAllRemindersDone')}</p>}
                   </div>
                    {completedReminders.length > 0 && <details className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700/50">
-                      <summary className="text-xs text-gray-500 cursor-pointer">Completed ({completedReminders.length})</summary>
+                      <summary className="text-xs text-gray-500 cursor-pointer">{t('chatCompleted')} ({completedReminders.length})</summary>
                       <div className="space-y-2 mt-2">
                          {completedReminders.map(r => <ReminderItem key={r.id} reminder={r} onToggle={toggleReminderCompletion} />)}
                       </div>
@@ -134,7 +136,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ geminiLive }) => {
               <div>
                   <div className="flex items-center mb-3">
                       <Icon path={ICONS.notes} className="w-5 h-5 mr-2 text-gray-500 dark:text-gray-400" />
-                      <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Personal Notes</h3>
+                      <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">{t('chatNotes')}</h3>
                   </div>
                   <div className="space-y-2">
                       {notes.map(n => <NoteItem key={n.id} note={n} onDelete={deleteNote} />)}
@@ -149,8 +151,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ geminiLive }) => {
         {transcript.length === 0 && !isConnected && !isLoadingData && (
             <div className="text-center text-gray-500 dark:text-gray-400 flex flex-col items-center justify-center h-full">
                 <Icon path={ICONS.robot} className="w-16 h-16 mb-4 text-gray-400 dark:text-gray-500" />
-                <h2 className="text-xl font-semibold">Ready to assist</h2>
-                <p>Press the microphone button to start a conversation.</p>
+                <h2 className="text-xl font-semibold">{t('chatReady')}</h2>
+                <p>{t('chatReadyPrompt')}</p>
             </div>
         )}
         {transcript.map((entry, index) => (
@@ -165,7 +167,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ geminiLive }) => {
           <Waveform isActive={isConnected && !isSpeaking} colorClass="bg-gray-400 dark:bg-gray-500" />
           <button
             onClick={handleToggleConnection}
-            aria-label={isConnected ? 'Stop session' : 'Start session'}
+            aria-label={isConnected ? t('chatStopSession') : t('chatStartSession')}
             disabled={isConnecting}
             className={`relative flex items-center justify-center w-20 h-20 rounded-full transition-all duration-300 ${
               isConnected ? 'bg-red-600 hover:bg-red-700' : 'bg-sky-600 hover:bg-sky-700'

@@ -1,5 +1,5 @@
 {
-  "name": "MarIA - Voice Assistant",
+  "name": "Maia - Voice Assistant",
   "description": "A 24/7 personal assistant platform that manages tasks, reminders, and personal notes through natural voice conversation. Powered by Google Gemini.",
   "requestFramePermissions": [
     "microphone"
