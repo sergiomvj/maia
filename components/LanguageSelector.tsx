@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Language, languageNames } from '../translations';
+import { Language, languageAbbreviations } from '../translations';
 
 const LanguageSelector: React.FC = () => {
   const { language, setLanguage } = useLanguage();
@@ -17,9 +17,9 @@ const LanguageSelector: React.FC = () => {
         className="appearance-none bg-gray-200 dark:bg-gray-700 border-none text-gray-700 dark:text-gray-300 py-2 pl-3 pr-8 rounded-md leading-tight focus:outline-none focus:bg-gray-300 dark:focus:bg-gray-600 focus:ring-2 focus:ring-sky-500 text-sm"
         aria-label="Select language"
       >
-        {(Object.keys(languageNames) as Language[]).map(lang => (
+        {(Object.keys(languageAbbreviations) as Language[]).map(lang => (
           <option key={lang} value={lang}>
-            {languageNames[lang]}
+            {languageAbbreviations[lang]}
           </option>
         ))}
       </select>

@@ -70,10 +70,10 @@ const ShoppingListPage: React.FC<ShoppingListPageProps> = ({ geminiLive }) => {
 
 
   return (
-    <div className="p-8 h-full overflow-y-auto">
+    <div className="p-4 md:p-8 h-full overflow-y-auto">
       <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">{t('shoppingListTitle')}</h2>
 
-      <form onSubmit={handleAddItem} className="flex gap-4 mb-8">
+      <form onSubmit={handleAddItem} className="flex flex-col sm:flex-row gap-4 mb-8">
         <input
           type="text"
           value={newItem}

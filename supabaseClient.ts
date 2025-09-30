@@ -63,11 +63,11 @@ CREATE POLICY "Users can update their own profile." ON public.profiles
   FOR UPDATE USING ( auth.uid() = id ) WITH CHECK ( auth.uid() = id );
 
 -- DEFINITIVE FIX FOR SIGN-UP ERROR:
--- This policy allows the database's internal 'postgres' user (which runs the trigger function)
+-- This policy allows the database's internal 'postgres' or 'service_role' user (which runs the trigger function)
 -- to insert rows into the profiles table. The trigger is what creates a user's profile
 -- automatically when they sign up. Without this policy, RLS blocks the trigger, and sign-up fails.
 CREATE POLICY "Allow trigger to insert new user profiles" ON public.profiles
-  FOR INSERT TO postgres WITH CHECK (true);
+  FOR INSERT TO postgres, service_role WITH CHECK (true);
 
 
 -- This function automatically creates a profile for a new user.
@@ -141,7 +141,7 @@ CREATE POLICY "Users can manage their own shopping list." ON public.shopping_lis
 CREATE TABLE IF NOT EXISTS public.chat_history (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  speaker text NOT NULL CHECK (speaker IN ('user', 'maria', 'system')),
+  speaker text NOT NULL CHECK (speaker IN ('user', 'maia', 'system')),
   text text NOT NULL,
   created_at timestamptz DEFAULT now() NOT NULL
 );

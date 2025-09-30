@@ -7,9 +7,10 @@ import { ICONS } from '../constants';
 
 interface ProfilePageProps {
   user: User;
+  onLogout: () => void;
 }
 
-const ProfilePage: React.FC<ProfilePageProps> = ({ user }) => {
+const ProfilePage: React.FC<ProfilePageProps> = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(true);
   const [fullName, setFullName] = useState('');
   const [apiKey, setApiKey] = useState('');
@@ -116,11 +117,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user }) => {
   };
 
   return (
-    <div className="p-8 h-full overflow-y-auto">
+    <div className="p-4 md:p-8 h-full overflow-y-auto">
       <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">{t('profileTitle')}</h2>
       <div className="max-w-2xl mx-auto space-y-8">
         {/* Profile Details Form */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-8">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-4 sm:p-6 md:p-8">
             <h3 className="text-xl font-semibold mb-6">{t('profilePersonalInfo')}</h3>
             {loading ? (
                 <div className="text-center text-gray-500 dark:text-gray-400">{t('profileLoading')}</div>
@@ -170,7 +171,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user }) => {
         </div>
         
         {/* API Key Form */}
-         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-8">
+         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-4 sm:p-6 md:p-8">
             <h3 className="text-xl font-semibold mb-2">{t('profileProviderSettings')}</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
                 {t('profileApiNote')}
@@ -224,6 +225,18 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user }) => {
                 </div>
             </form>
          </div>
+
+         {/* Danger Zone */}
+         <div className="mt-8 p-4 sm:p-6 md:p-8 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800/50">
+            <h3 className="text-xl font-semibold text-red-800 dark:text-red-200">{t('profileDangerZone')}</h3>
+            <p className="text-sm text-red-600 dark:text-red-300 mt-2 mb-6">{t('profileLogoutInfo')}</p>
+            <button
+                onClick={onLogout}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg transition-colors w-full sm:w-auto"
+            >
+                {t('navLogout')}
+            </button>
+        </div>
       </div>
     </div>
   );

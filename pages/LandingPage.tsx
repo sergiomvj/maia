@@ -37,50 +37,50 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowLegalPage }) => {
         {/* Header */}
         <header className="container mx-auto px-6 py-4 flex justify-between items-center">
           <Logo />
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 md:space-x-4">
             <LanguageSelector />
             <ThemeToggle />
-            <button onClick={() => setIsAuthModalOpen(true)} className="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
-              {t('loginSignUp')}
+            <button
+                onClick={() => setIsAuthModalOpen(true)}
+                className="bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg transition-colors flex items-center justify-center h-10 w-10 md:w-auto md:h-auto md:py-2 md:px-4"
+                aria-label={t('loginSignUp')}
+            >
+                <Icon path={ICONS.login} className="w-5 h-5 block md:hidden" />
+                <span className="hidden md:block">{t('loginSignUp')}</span>
             </button>
           </div>
         </header>
 
         {/* Hero Section */}
-        <main className="relative h-[550px] flex flex-col justify-end text-center text-white overflow-hidden">
-            {/* Background Video and Overlay */}
-            <div className="absolute inset-0">
-              <video
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="absolute z-0 w-full h-full object-cover"
-                src="https://videos.pexels.com/video-files/4784458/4784458-hd.mp4"
-              >
-                Your browser does not support the video tag.
-              </video>
-              <div className="absolute inset-0 bg-teal-800/75" />
-            </div>
-
-            {/* Content */}
-            <div className="relative z-10 px-6 pb-[100px]">
-                <h2 className="text-5xl font-extrabold mb-4" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.4)' }}>
-                    {t('heroTitleLine1')}
-                    <br />
-                    {t('heroTitleLine2')}
-                </h2>
-                <p className="text-lg text-gray-200 max-w-2xl mx-auto mb-8" style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.4)' }}>
-                    {t('heroSubtitle')}
-                </p>
-                <button onClick={() => setIsAuthModalOpen(true)} className="bg-sky-600 hover:bg-sky-700 text-white font-bold py-4 px-8 rounded-lg text-lg transition-transform transform hover:scale-105 shadow-lg">
-                    {t('getStarted')}
-                </button>
-            </div>
+        <main 
+            className="relative h-[500px] md:h-[650px] overflow-hidden bg-cover bg-center"
+            style={{ backgroundImage: "url('https://i.imgur.com/CTZb457.png')" }}
+        >
+            {/* Content has been moved to the section below */}
         </main>
+        
+        {/* New Call-to-Action Section */}
+        <section className="bg-violet-700 h-[300px] flex flex-col items-center justify-center text-center text-white">
+            <div className="container mx-auto px-6">
+                <div className="max-w-3xl mx-auto">
+                    <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 leading-tight">
+                        {t('heroTitleLine1')}
+                        <br />
+                        {t('heroTitleLine2')}
+                    </h2>
+                    <p className="text-base sm:text-lg text-violet-200 max-w-2xl mx-auto mb-8">
+                        {t('heroSubtitle')}
+                    </p>
+                    <button onClick={() => setIsAuthModalOpen(true)} className="bg-sky-600 hover:bg-sky-700 text-white font-bold py-4 px-8 rounded-lg text-lg transition-transform transform hover:scale-105 shadow-lg">
+                        {t('getStarted')}
+                    </button>
+                </div>
+            </div>
+        </section>
+
 
         {/* "What Maia can do for you" Section */}
-        <section className="bg-white dark:bg-gray-800/50 py-20">
+        <section className="bg-white dark:bg-gray-800/50 py-16 md:py-20">
           <div className="container mx-auto px-6">
             <div className="text-center mb-16">
               <h2 className="text-4xl font-extrabold mb-4">{t('modernFeaturesTitle')}</h2>

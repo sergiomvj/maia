@@ -8,6 +8,7 @@ import ThemeToggle from './ThemeToggle';
 import LanguageSelector from './LanguageSelector';
 import Logo from './Logo';
 import Footer from './Footer';
+import BottomNavBar from './BottomNavBar';
 import { ICONS } from '../constants';
 import { useGeminiLive } from '../hooks/useGeminiLive';
 import { User, LegalPageType } from '../types';
@@ -53,7 +54,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ user, onLogout, onSho
       case 'shoppingList':
         return <ShoppingListPage geminiLive={geminiLive} />;
        case 'profile':
-        return <ProfilePage user={user} />;
+        return <ProfilePage user={user} onLogout={onLogout} />;
       case 'chat':
       default:
         return <ChatInterface geminiLive={geminiLive} />;
@@ -68,9 +69,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ user, onLogout, onSho
   }
 
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white">
-      {/* Sidebar */}
-      <aside className="flex flex-col w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
+    <div className="flex flex-col md:flex-row h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white">
+      {/* Sidebar - Hidden on mobile */}
+      <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-center h-20 border-b border-gray-200 dark:border-gray-700">
           <Logo size="small" />
         </div>
@@ -100,17 +101,20 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ user, onLogout, onSho
                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${geminiLive.isConnected ? 'bg-sky-400' : 'bg-gray-400 dark:bg-gray-500'} opacity-75`}></span>
                 <span className={`relative inline-flex rounded-full h-3 w-3 ${geminiLive.isConnected ? 'bg-sky-500' : 'bg-gray-500 dark:bg-gray-600'}`}></span>
               </span>
-              <span className="text-sm text-gray-500 dark:text-gray-400">{geminiLive.isConnected ? t('statusOnline') : t('statusOffline')}</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:inline">{geminiLive.isConnected ? t('statusOnline') : t('statusOffline')}</span>
             </div>
             <LanguageSelector />
             <ThemeToggle />
           </div>
         </header>
-        <div className="flex-1 overflow-y-auto bg-gray-100 dark:bg-gray-900">
+        <div className="flex-1 overflow-y-auto bg-gray-100 dark:bg-gray-900 pb-24 md:pb-0">
            {renderActiveView()}
            <Footer onLinkClick={onShowLegalPage} />
         </div>
       </main>
+
+      {/* Bottom Navigation - Only on mobile */}
+      <BottomNavBar activeView={activeView} setActiveView={setActiveView} />
     </div>
   );
 };

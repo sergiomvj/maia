@@ -6,6 +6,12 @@ export const languageNames: { [key in Language]: string } = {
     pt: 'Português',
 };
 
+export const languageAbbreviations: { [key in Language]: string } = {
+    en: 'EN',
+    es: 'ES',
+    pt: 'PT',
+};
+
 export const translations: { [key in Language]: { [key: string]: string } } = {
   en: {
     loginSignUp: "Login / Sign Up",
@@ -97,6 +103,8 @@ export const translations: { [key in Language]: { [key: string]: string } } = {
     profileLoadError: "Failed to load profile. Please ensure you have set up the `profiles` table in Supabase as per the instructions in `supabaseClient.ts`.",
     profileApiKeySaveSuccess: "API Key saved securely. Please start a new session for it to take effect.",
     profileApiKeyRequired: "Please enter an API key.",
+    profileDangerZone: "Danger Zone",
+    profileLogoutInfo: "Logging out will end your current session and you will be returned to the landing page.",
     welcomeMessage: "Welcome back, {userName}! How can I help you today?",
     reminderSet: "Reminder set: \"{task}\"",
     noteSaved: "Note saved.",
@@ -199,6 +207,8 @@ export const translations: { [key in Language]: { [key: string]: string } } = {
     profileLoadError: "Error al cargar el perfil. Asegúrate de haber configurado la tabla `profiles` en Supabase según las instrucciones en `supabaseClient.ts`.",
     profileApiKeySaveSuccess: "Clave de API guardada de forma segura. Inicia una nueva sesión para que surta efecto.",
     profileApiKeyRequired: "Por favor, introduce una clave de API.",
+    profileDangerZone: "Zona de Peligro",
+    profileLogoutInfo: "Cerrar sesión finalizará tu sesión actual y serás devuelto a la página de inicio.",
     welcomeMessage: "¡Bienvenido de nuevo, {userName}! ¿Cómo puedo ayudarte hoy?",
     reminderSet: "Recordatorio establecido: \"{task}\"",
     noteSaved: "Nota guardada.",
@@ -301,6 +311,8 @@ export const translations: { [key in Language]: { [key: string]: string } } = {
     profileLoadError: "Falha ao carregar o perfil. Certifique-se de ter configurado a tabela `profiles` no Supabase conforme as instruções em `supabaseClient.ts`.",
     profileApiKeySaveSuccess: "Chave de API salva com segurança. Inicie uma nova sessão para que ela entre em vigor.",
     profileApiKeyRequired: "Por favor, insira uma chave de API.",
+    profileDangerZone: "Zona de Perigo",
+    profileLogoutInfo: "Sair encerrará sua sessão atual e você será redirecionado para a página inicial.",
     welcomeMessage: "Bem-vindo(a) de volta, {userName}! Como posso ajudar hoje?",
     reminderSet: "Lembrete definido: \"{task}\"",
     noteSaved: "Nota salva.",
@@ -311,6 +323,6 @@ export const translations: { [key in Language]: { [key: string]: string } } = {
     privacyTitle: "Política de Privacidade",
     privacyText: "Sua privacidade é nossa principal prioridade. Esta Política de Privacidade descreve como a Maia coleta, usa e protege suas informações.\n1. Informações que Coletamos: Coletamos as informações que você fornece diretamente, como seu nome, e-mail e quaisquer dados que você fornece à Maia (lembretes, notas, etc.). Também coletamos dados de uso para melhorar nossos services.\n2. Como Usamos as Informações: Seus dados são usados para fornecer e personalizar o serviço Maia, comunicar-se com você e para pesquisa e desenvolvimento. Não vendemos seus dados pessoais a terceiros.\n3. Segurança dos Dados: Implementamos medidas de segurança robustas para proteger seus dados. As chaves de API são criptografadas em nossos servidores e nunca expostas à aplicação do lado do cliente. Toda a comunicação é protegida usando criptografia padrão do setor.\n4. Suas Escolhas: Você pode revisar e atualizar as informações da sua conta a qualquer momento. Você também pode excluir sua conta, o que removerá permanentemente seus dados pessoais de nossos sistemas.",
     termsTitle: "Termos de Uso",
-    termsText: "Ao usar o aplicativo Maia, você concorda com estes Termos de Uso.\n1. Uso do Serviço: Você concorda em usar a Maia apenas para fins lícitos e de uma forma que não infrinja os direitos de, restrinja ou iniba o uso e o aproveitamento do serviço por qualquer outra pessoa. Você é responsável por proteger as informações da sua conta.\n2. Propriedade Intelectual: O serviço Maia e seu conteúdo, recursos e funcionalidades originais são e continuarão sendo propriedade exclusiva de nossa empresa e de seus licenciadores.\n3. Rescisão: Podemos rescindir ou suspender sua conta imediatamente, sem aviso prévio ou responsabilidade, por qualquer motivo, incluindo, sem limitação, se você violar os Termos.\n4. Limitação de Responsabilidade: Em nenhuma circunstância nossa equipe, nem seus diretores, funcionários, parceiros, agentes, fornecedores ou afiliados, serão responsáveis por quaisquer danos indiretos, incidentais, especiais, consequenciais ou punitivos, incluindo, sem limitação, perda de lucros, dados, uso, ágio ou outras perdas intangíveis, resultantes de seu acesso ou uso ou incapacidade de acessar ou usar o serviço.",
+    termsText: "Ao usar o aplicativo Maia, você concorda com estes Termos de Uso.\n1. Uso do Serviço: Você concorda em usar a Maia apenas para fins lícitos e de uma forma que não infrinja os direitos de, restrinja ou iniba o uso e o aproveitamento do serviço por qualquer outra pessoa. Você é responsável por proteger as informações da sua conta.\n2. Propriedade Intelectual: O serviço Maia e seu conteúdo, recursos e funcionalidades originais são e continuarão sendo propriedade exclusiva de nossa empresa e de seus licenciadores.\n3. Rescisão: Podemos rescindir ou suspender sua conta imediatamente, sem aviso prévio ou responsabilidade, por qualquer motivo, incluindo, sem limitação, se você violar os Termos.\n4. Limitação de Responsabilidade: Em nenhuma circunstância nossa equipe, nem seus directores, funcionários, parceiros, agentes, fornecedores ou afiliados, serão responsáveis por quaisquer danos indiretos, incidentais, especiais, consequenciais ou punitivos, incluindo, sem limitação, perda de lucros, dados, uso, ágio ou outras perdas intangíveis, resultantes de seu acesso ou uso ou incapacidade de acessar ou usar o serviço.",
   }
 };

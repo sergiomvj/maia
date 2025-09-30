@@ -108,8 +108,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ geminiLive }) => {
   const completedReminders = reminders.filter(r => r.is_completed);
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 m-4">
-      <div className="flex-shrink-0 p-4 border-b border-gray-200 dark:border-gray-700 overflow-y-auto max-h-[45%]">
+    <div className="flex flex-col h-full overflow-hidden bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 m-2 md:m-4">
+      <div className="flex-shrink-0 p-3 md:p-4 border-b border-gray-200 dark:border-gray-700 overflow-y-auto max-h-[50%] md:max-h-[45%]">
         {isLoadingData ? (
              <div className="text-center text-gray-500">{t('chatLoading')}</div>
         ) : (
@@ -147,7 +147,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ geminiLive }) => {
         )}
       </div>
       
-      <div ref={scrollRef} className="flex-grow p-6 space-y-4 overflow-y-auto bg-gray-50 dark:bg-gray-800/50">
+      <div ref={scrollRef} className="flex-grow p-4 md:p-6 space-y-4 overflow-y-auto bg-gray-50 dark:bg-gray-800/50">
         {transcript.length === 0 && !isConnected && !isLoadingData && (
             <div className="text-center text-gray-500 dark:text-gray-400 flex flex-col items-center justify-center h-full">
                 <Icon path={ICONS.robot} className="w-16 h-16 mb-4 text-gray-400 dark:text-gray-500" />
@@ -160,7 +160,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ geminiLive }) => {
         ))}
       </div>
 
-      <div className="flex-shrink-0 p-6 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <div className="flex-shrink-0 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         {error && <div className="text-red-500 text-center mb-4 text-sm">{error}</div>}
         
         <div className="flex items-center justify-center space-x-4">
