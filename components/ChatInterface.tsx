@@ -20,7 +20,7 @@ const ChatBubble: React.FC<{ entry: TranscriptEntry }> = ({ entry }) => {
   if (isSystem) {
     return (
       <div className="flex justify-center my-2">
-        <div className="px-3 py-1 text-xs text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 rounded-full">
+        <div className="px-3 py-1 text-xs text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 rounded-full italic">
           {entry.text}
         </div>
       </div>
@@ -28,18 +28,46 @@ const ChatBubble: React.FC<{ entry: TranscriptEntry }> = ({ entry }) => {
   }
 
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-      <div
-        className={`max-w-xl px-4 py-2 rounded-2xl text-white ${
-          isUser
-            ? 'bg-sky-600 rounded-br-none'
-            : 'bg-gray-600 dark:bg-gray-700 rounded-bl-none'
-        }`}
-      >
-        <p className={`text-sm ${entry.isFinal ? 'text-white' : 'text-gray-200 dark:text-gray-300'}`}>
-          {entry.text}
-        </p>
-      </div>
+     <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
+        <div
+            className={`max-w-xl px-4 py-2 rounded-2xl text-white ${
+            isUser
+                ? 'bg-sky-600 rounded-br-none'
+                : 'bg-gray-600 dark:bg-gray-700 rounded-bl-none'
+            }`}
+        >
+            <p className={`text-sm ${entry.isFinal ? 'text-white' : 'text-gray-200 dark:text-gray-300'}`}>
+            {entry.text}
+            </p>
+            {entry.imageData && (
+                <div className="mt-2 p-1 bg-black/20 rounded-lg">
+                    <img src={`data:image/png;base64,${entry.imageData}`} alt={entry.text} className="rounded-md max-w-sm w-full" />
+                </div>
+            )}
+        </div>
+
+        {entry.citations && entry.citations.length > 0 && (
+            <div className="mt-2 max-w-xl w-full">
+            <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mb-1">
+                <Icon path={ICONS.web} className="w-3.5 h-3.5 mr-1.5" />
+                <span>Sources:</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+                {entry.citations.map((citation, index) => (
+                <a 
+                    href={citation.web.uri} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    key={index} 
+                    className="bg-gray-200 dark:bg-gray-700 text-xs px-2 py-1 rounded-md hover:bg-sky-100 dark:hover:bg-sky-900/50 text-sky-700 dark:text-sky-300 transition-colors truncate max-w-[150px] sm:max-w-xs block"
+                    title={citation.web.title}
+                >
+                    {index + 1}. {citation.web.title || new URL(citation.web.uri).hostname}
+                </a>
+                ))}
+            </div>
+            </div>
+        )}
     </div>
   );
 };
@@ -86,7 +114,7 @@ const NoteItem: React.FC<{ note: Note; onDelete: (id: string) => void }> = ({ no
 
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ geminiLive }) => {
-  const { isConnecting, isConnected, isSpeaking, isLoadingData, error, transcript, reminders, notes, startSession, closeSession, toggleReminderCompletion, deleteNote } = geminiLive;
+  const { isConnecting, isConnected, isSpeaking, isLoadingData, isProcessingTool, error, transcript, reminders, notes, startSession, closeSession, toggleReminderCompletion, deleteNote } = geminiLive;
   const { t } = useLanguage();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -94,7 +122,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ geminiLive }) => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [transcript]);
+  }, [transcript, isProcessingTool]);
 
   const handleToggleConnection = () => {
     if (isConnected || isConnecting) {
@@ -158,6 +186,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ geminiLive }) => {
         {transcript.map((entry, index) => (
           <ChatBubble key={entry.id || index} entry={entry} />
         ))}
+         {isProcessingTool && (
+            <div className="flex flex-col items-start">
+                <div className="max-w-xl px-4 py-2 rounded-2xl text-white bg-gray-600 dark:bg-gray-700 rounded-bl-none animate-pulse">
+                    <p className="text-sm italic">{t('chatThinking')}</p>
+                </div>
+            </div>
+        )}
       </div>
 
       <div className="flex-shrink-0 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">

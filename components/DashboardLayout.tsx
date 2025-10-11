@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Icon from './Icon';
 import ChatInterface from './ChatInterface';
 import AgendaPage from '../pages/AgendaPage';
@@ -11,16 +11,16 @@ import Footer from './Footer';
 import BottomNavBar from './BottomNavBar';
 import { ICONS } from '../constants';
 import { useGeminiLive } from '../hooks/useGeminiLive';
-import { User, LegalPageType } from '../types';
+import { User, LegalPageType, ActiveView } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface DashboardLayoutProps {
   user: User;
   onLogout: () => void;
   onShowLegalPage: (page: LegalPageType) => void;
+  activeView: ActiveView;
+  setActiveView: (view: ActiveView) => void;
 }
-
-type ActiveView = 'chat' | 'agenda' | 'shoppingList' | 'profile';
 
 const NavItem: React.FC<{
   icon: string;
@@ -42,8 +42,7 @@ const NavItem: React.FC<{
   </button>
 );
 
-const DashboardLayout: React.FC<DashboardLayoutProps> = ({ user, onLogout, onShowLegalPage }) => {
-  const [activeView, setActiveView] = useState<ActiveView>('chat');
+const DashboardLayout: React.FC<DashboardLayoutProps> = ({ user, onLogout, onShowLegalPage, activeView, setActiveView }) => {
   const geminiLive = useGeminiLive(user);
   const { t } = useLanguage();
 

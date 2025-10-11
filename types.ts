@@ -3,6 +3,8 @@ import { User as SupabaseUser, Session as SupabaseSession } from '@supabase/supa
 export type User = SupabaseUser;
 export type Session = SupabaseSession;
 
+export type ActiveView = 'chat' | 'agenda' | 'shoppingList' | 'profile';
+
 export interface Profile {
   id: string;
   full_name: string;
@@ -60,9 +62,11 @@ export interface TranscriptEntry {
   text: string;
   isFinal: boolean;
   id?: string; // Corresponds to ChatHistoryEntry id
+  citations?: { web: { uri: string; title: string } }[];
+  imageData?: string; // Base64 encoded image data
 }
 
-export type LegalPageType = 'about' | 'privacy' | 'terms';
+export type LegalPageType = 'about' | 'privacy' | 'terms' | 'manual';
 
 // Types for WebSocket communication with the proxy
 export type ClientToServerMessage =

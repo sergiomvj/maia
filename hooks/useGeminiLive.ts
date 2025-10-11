@@ -15,6 +15,7 @@ export const useGeminiLive = (user: User | null) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [isProcessingTool, setIsProcessingTool] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
@@ -32,6 +33,7 @@ export const useGeminiLive = (user: User | null) => {
   const mediaStreamSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const playbackQueueRef = useRef<Set<AudioBufferSourceNode>>(new Set());
   const nextStartTimeRef = useRef<number>(0);
+  const pendingCitationsRef = useRef<any[] | null>(null);
 
   // Fetch initial data from Supabase when user is available
   useEffect(() => {
@@ -102,8 +104,6 @@ export const useGeminiLive = (user: User | null) => {
 
   const saveTranscriptEntry = useCallback(async (entry: Omit<ChatHistoryEntry, 'id' | 'created_at' | 'user_id'>) => {
       if (!user) return;
-      // Don't save system messages to history
-      if (entry.speaker === 'system') return;
       const { error } = await supabase.from('chat_history').insert({ ...entry, user_id: user.id });
       if (error) {
           console.error('Failed to save chat history:', error);
@@ -205,6 +205,7 @@ export const useGeminiLive = (user: User | null) => {
     setIsConnected(false);
     setIsConnecting(false);
     setIsSpeaking(false);
+    setIsProcessingTool(false);
     nextStartTimeRef.current = 0;
   }, []);
 
@@ -218,51 +219,118 @@ export const useGeminiLive = (user: User | null) => {
 
   const handleToolCall = useCallback(async (toolCall: any) => {
     if (!user) return;
-    let toolResponseResult: any = "ok";
-    let systemMessageText: string | null = null;
-    
-    if (toolCall.name === 'createReminder') {
-        const { task, dueDate, dueTime, priority } = toolCall.args as { task: string; dueDate?: string; dueTime?: string, priority?: 'High' | 'Medium' | 'Low' };
-        const { data: newReminder, error } = await supabase.from('reminders').insert({ task, due_date: dueDate, due_time: dueTime, priority: priority || 'Medium', user_id: user.id }).select().single();
-        if (error) { console.error('DB Error:', error); toolResponseResult = "Failed to save reminder."; }
-        else if (newReminder) { setReminders(prev => [newReminder, ...prev]); systemMessageText = t('reminderSet', { task }); playSuccessSound(); }
-    } else if (toolCall.name === 'saveNote') {
-        const { content } = toolCall.args as { content: string };
-        const { data: newNote, error } = await supabase.from('notes').insert({ content, user_id: user.id }).select().single();
-        if (error) { console.error('DB Error:', error); toolResponseResult = "Failed to save note."; }
-        else if (newNote) { setNotes(prev => [newNote, ...prev]); systemMessageText = t('noteSaved'); playSuccessSound(); }
-    } else if (toolCall.name === 'searchNotes') {
-        const { query } = toolCall.args as { query: string };
-        const { data, error } = await supabase.from('notes').select('content').ilike('content', `%${query}%`);
-        if (error) { toolResponseResult = "Failed to search notes."; }
-        else { toolResponseResult = data.length > 0 ? data : "No relevant notes found."; }
-    } else if (toolCall.name === 'addShoppingListItem') {
-        const { item, quantity } = toolCall.args as { item: string; quantity?: number };
-        await addShoppingListItem(item, quantity);
-        systemMessageText = t('shoppingListItemAdded', { item });
-    } else if (toolCall.name === 'removeShoppingListItem') {
-        const { item } = toolCall.args as { item: string };
-        await removeShoppingListItem(item);
-        systemMessageText = t('shoppingListItemRemoved', { item });
-    } else if (toolCall.name === 'getCalendarEvents') {
-        const mockEvents: CalendarEvent[] = [
-            { id: '1', title: 'Team Standup', startTime: '09:00', endTime: '09:30', description: 'Daily project sync' },
-            { id: '2', title: 'Design Review', startTime: '11:00', endTime: '12:00', description: 'Review new mockups' },
-            { id: '3', title: 'Lunch with Alex', startTime: '12:30', endTime: '13:30' }
-        ];
-        setCalendarEvents(mockEvents);
-        toolResponseResult = mockEvents;
-    }
-    
-    if(systemMessageText) {
-         setTranscript(prev => [...prev, { speaker: 'system', text: systemMessageText!, isFinal: true }]);
-    }
+    setIsProcessingTool(true);
+    try {
+        let toolResponseResult: any = "ok";
+        let systemMessageText: string | null = null;
+        
+        // --- Existing Features ---
+        if (toolCall.name === 'createReminder') {
+            const { task, dueDate, dueTime, priority } = toolCall.args as { task: string; dueDate?: string; dueTime?: string, priority?: 'High' | 'Medium' | 'Low' };
+            const { data: newReminder, error } = await supabase.from('reminders').insert({ task, due_date: dueDate, due_time: dueTime, priority: priority || 'Medium', user_id: user.id }).select().single();
+            if (error) { console.error('DB Error:', error); toolResponseResult = "Failed to save reminder."; }
+            else if (newReminder) { setReminders(prev => [newReminder, ...prev]); systemMessageText = t('reminderSet', { task }); playSuccessSound(); }
+        } else if (toolCall.name === 'saveNote') {
+            const { content } = toolCall.args as { content: string };
+            const { data: newNote, error } = await supabase.from('notes').insert({ content, user_id: user.id }).select().single();
+            if (error) { console.error('DB Error:', error); toolResponseResult = "Failed to save note."; }
+            else if (newNote) { setNotes(prev => [newNote, ...prev]); systemMessageText = t('noteSaved'); playSuccessSound(); }
+        } else if (toolCall.name === 'addShoppingListItem') {
+            const { item, quantity } = toolCall.args as { item: string; quantity?: number };
+            await addShoppingListItem(item, quantity);
+            systemMessageText = t('shoppingListItemAdded', { item });
+        } else if (toolCall.name === 'removeShoppingListItem') {
+            const { item } = toolCall.args as { item: string };
+            await removeShoppingListItem(item);
+            systemMessageText = t('shoppingListItemRemoved', { item });
+        } 
+        
+        // --- New Real-Time Information Features ---
+        else if (toolCall.name === 'performWebSearch' || toolCall.name === 'getLatestNews' || toolCall.name === 'getWeather' || toolCall.name === 'findProductPrice') {
+            const query = toolCall.args.query || toolCall.args.topic || `weather in ${toolCall.args.city}` || `price of ${toolCall.args.productName}`;
+            systemMessageText = t('webSearchInProgress', { query });
+            try {
+                const { data, error } = await supabase.functions.invoke('generate-grounded-content', {
+                    body: { query },
+                });
+                if (error) throw error;
+                toolResponseResult = data.text || "I couldn't find anything about that.";
+                if (data.citations && data.citations.length > 0) {
+                    pendingCitationsRef.current = data.citations;
+                }
+            } catch (err: any) {
+                console.error("Web search error:", err);
+                toolResponseResult = "Sorry, I had trouble searching for that.";
+            }
+        }
+        
+        // --- Image Generation ---
+        else if (toolCall.name === 'generateImage') {
+            const { prompt } = toolCall.args;
+            systemMessageText = t('imageGenerationInProgress');
+            try {
+                const { data, error } = await supabase.functions.invoke('generate-image', {
+                    body: { prompt, negativePrompt: toolCall.args.negativePrompt },
+                });
 
-    if (wsRef.current) {
-        const response = { type: 'toolResponse', payload: { functionResponses: { id: toolCall.id, name: toolCall.name, response: { result: toolResponseResult } } } };
-        wsRef.current.send(JSON.stringify(response));
+                if (error) throw error;
+                
+                const newImageEntry: TranscriptEntry = {
+                    speaker: 'maia',
+                    text: t('imageGenerated', { prompt }),
+                    imageData: data.imageData,
+                    isFinal: true,
+                };
+                setTranscript(prev => [...prev, newImageEntry]);
+                saveTranscriptEntry({ speaker: newImageEntry.speaker, text: newImageEntry.text });
+                toolResponseResult = "Image generated and displayed successfully.";
+
+            } catch (err: any) {
+                console.error("Image generation error:", err);
+                toolResponseResult = "Sorry, I had trouble generating that image.";
+            }
+        }
+
+        // --- New Mocked Integration Features ---
+        else if (toolCall.name === 'controlSmartDevice') {
+            const { deviceName, action, value } = toolCall.args;
+            systemMessageText = t('simulatedAction', { action: `Device '${deviceName}' turned ${action} ${value ? `to ${value}`: ''}`.trim() });
+        } else if (toolCall.name === 'createCalendarEvent') {
+            const { title, date, time } = toolCall.args;
+            systemMessageText = t('simulatedAction', { action: `Event '${title}' created for ${date} at ${time}` });
+        } else if (toolCall.name === 'sendEmail') {
+            const { recipient } = toolCall.args;
+            systemMessageText = t('simulatedAction', { action: `Email sent to ${recipient}` });
+        } else if (toolCall.name === 'sendSlackMessage') {
+            const { channel } = toolCall.args;
+            systemMessageText = t('simulatedAction', { action: `Message sent to Slack channel ${channel}` });
+        } else if (toolCall.name === 'orderPizza') {
+            const { size, toppings } = toolCall.args;
+            systemMessageText = t('simulatedAction', { action: `Ordered a ${size} pizza with ${toppings.join(', ')}` });
+        } else if (toolCall.name === 'getSalesData') {
+            toolResponseResult = "This quarter's sales are up 15% to $1.2M.";
+            systemMessageText = t('simulatedAction', { action: `Fetched sales data` });
+        } else if (toolCall.name === 'getSupportTicket') {
+            const { ticketId } = toolCall.args;
+            toolResponseResult = `Ticket ${ticketId} is open and assigned to Kevin. The issue is 'Cannot log in'.`;
+            systemMessageText = t('simulatedAction', { action: `Fetched support ticket ${ticketId}` });
+        }
+
+        
+        if(systemMessageText) {
+             const newSystemEntry: TranscriptEntry = { speaker: 'system', text: systemMessageText, isFinal: true };
+             setTranscript(prev => [...prev, newSystemEntry]);
+             saveTranscriptEntry(newSystemEntry);
+        }
+
+        if (wsRef.current) {
+            const response = { type: 'toolResponse', payload: { functionResponses: { id: toolCall.id, name: toolCall.name, response: { result: toolResponseResult } } } };
+            wsRef.current.send(JSON.stringify(response));
+        }
+    } finally {
+        setIsProcessingTool(false);
     }
-  }, [user, notes, addShoppingListItem, removeShoppingListItem, t]);
+  }, [user, addShoppingListItem, removeShoppingListItem, t, saveTranscriptEntry]);
 
   const startSession = useCallback(async () => {
     if (isConnecting || isConnected) return;
@@ -321,27 +389,32 @@ export const useGeminiLive = (user: User | null) => {
             
             setTranscript(prev => {
                 const last = prev[prev.length - 1];
+                // If the last entry is for the same speaker and isn't final yet, append the text.
                 if (last?.speaker === speaker && !last.isFinal) {
-                    return [...prev.slice(0, -1), { ...last, text: last.text + text }];
-                }
-                return [...prev, { speaker, text, isFinal: false }];
-            });
-
-            if (isFinal) {
-                let finalTranscriptText = '';
-                 setTranscript(prev => {
-                    const last = prev[prev.length - 1];
-                    if (last?.speaker === speaker && !last.isFinal) {
-                        finalTranscriptText = last.text; // Text is already concatenated
-                        return [...prev.slice(0, -1), { ...last, isFinal: true }];
+                    const updatedEntry = { ...last, text: last.text + text };
+                    if (isFinal) {
+                        updatedEntry.isFinal = true;
+                        // If this is Maia's final response and there are citations pending, attach them.
+                        if (speaker === 'maia' && pendingCitationsRef.current) {
+                            updatedEntry.citations = pendingCitationsRef.current;
+                            pendingCitationsRef.current = null; // Clear after use
+                        }
+                        saveTranscriptEntry({ speaker, text: updatedEntry.text });
                     }
-                    finalTranscriptText = text; // This handles cases where there's no previous partial
-                    return prev;
-                });
-                if (finalTranscriptText) {
-                    saveTranscriptEntry({ speaker, text: finalTranscriptText });
+                    return [...prev.slice(0, -1), updatedEntry];
                 }
-            }
+                
+                // Otherwise, create a new transcript entry.
+                const newEntry: TranscriptEntry = { speaker, text, isFinal };
+                if (isFinal) {
+                    if (speaker === 'maia' && pendingCitationsRef.current) {
+                        newEntry.citations = pendingCitationsRef.current;
+                        pendingCitationsRef.current = null;
+                    }
+                    saveTranscriptEntry({ speaker, text: newEntry.text });
+                }
+                return [...prev, newEntry];
+            });
 
             if (kind === 'output') {
                  setIsSpeaking(true);
@@ -385,13 +458,14 @@ export const useGeminiLive = (user: User | null) => {
       setError(`Failed to start session: ${err.message}`);
       cleanup();
     }
-  }, [cleanup, handleToolCall, saveTranscriptEntry, isConnected, isConnecting]);
+  }, [cleanup, handleToolCall, saveTranscriptEntry, isConnected, isConnecting, t]);
 
   return {
     isConnecting,
     isConnected,
     isSpeaking,
     isLoadingData,
+    isProcessingTool,
     error,
     transcript,
     reminders: sortedReminders,

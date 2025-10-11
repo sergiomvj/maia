@@ -56,13 +56,37 @@ function pcmToWav(pcmData: ArrayBuffer): Blob {
 // --- SHARED TOOL/FUNCTION DECLARATIONS ---
 // Gemini format
 const geminiFunctionDeclarations: FunctionDeclaration[] = [
+    // Core Features
     { name: 'createReminder', description: "Creates a reminder with a task, and optional due date, due time, and priority ('High', 'Medium', or 'Low').", parameters: { type: Type.OBJECT, properties: { task: { type: Type.STRING }, dueDate: { type: Type.STRING }, dueTime: { type: Type.STRING }, priority: { type: Type.STRING } }, required: ['task'] } },
     { name: 'saveNote', description: 'Saves a note', parameters: { type: Type.OBJECT, properties: { content: { type: Type.STRING } }, required: ['content'] } },
-    { name: 'searchNotes', description: 'Searches notes', parameters: { type: Type.OBJECT, properties: { query: { type: Type.STRING } }, required: ['query'] } },
     { name: 'addShoppingListItem', description: 'Adds to shopping list', parameters: { type: Type.OBJECT, properties: { item: { type: Type.STRING }, quantity: { type: Type.NUMBER } }, required: ['item'] } },
     { name: 'removeShoppingListItem', description: 'Removes from shopping list', parameters: { type: Type.OBJECT, properties: { item: { type: Type.STRING } }, required: ['item'] } },
-    { name: 'getCalendarEvents', description: 'Gets calendar events', parameters: { type: Type.OBJECT, properties: { date: { type: Type.STRING } } } },
+
+    // Real-Time Information
+    { name: 'getWeather', description: "Gets the current weather for a specific city.", parameters: { type: Type.OBJECT, properties: { city: { type: Type.STRING, description: "The city, e.g., San Francisco" } }, required: ['city'] } },
+    { name: 'getLatestNews', description: "Gets the latest news headlines for a given topic.", parameters: { type: Type.OBJECT, properties: { topic: { type: Type.STRING, description: "The news topic, e.g., technology" } }, required: ['topic'] } },
+    { name: 'performWebSearch', description: "Performs a web search for a given query when information is not otherwise known.", parameters: { type: Type.OBJECT, properties: { query: { type: Type.STRING, description: "The search query" } }, required: ['query'] } },
+    
+    // Creative
+    { name: 'generateImage', description: "Generates an image based on a user's prompt. Can also accept a negative prompt to specify what to avoid.", parameters: { type: Type.OBJECT, properties: { prompt: { type: Type.STRING, description: "A detailed description of the image to generate." }, negativePrompt: { type: Type.STRING, description: "A description of what to avoid in the image." } }, required: ['prompt'] } },
+
+    // Smart Home
+    { name: 'controlSmartDevice', description: "Controls a smart home device.", parameters: { type: Type.OBJECT, properties: { deviceName: { type: Type.STRING, description: "The name of the device, e.g., living room lights" }, action: { type: Type.STRING, description: "The action to perform: 'on', 'off', or 'toggle'" }, setting: { type: Type.STRING, description: "Optional setting to change, e.g., brightness" }, value: { type: Type.STRING, description: "Optional value for the setting, e.g., 50%" } }, required: ['deviceName', 'action'] } },
+
+    // App Integration
+    { name: 'createCalendarEvent', description: "Creates a new event in the user's calendar.", parameters: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, date: { type: Type.STRING, description: "Date of the event, e.g., 2024-08-15" }, time: { type: Type.STRING, description: "Time of the event, e.g., 14:30" }, durationMinutes: { type: Type.NUMBER, description: "Duration of the event in minutes" }, description: { type: Type.STRING, description: "Optional description for the event" } }, required: ['title', 'date', 'time'] } },
+    { name: 'sendEmail', description: "Sends an email to a recipient.", parameters: { type: Type.OBJECT, properties: { recipient: { type: Type.STRING, description: "Email address of the recipient" }, subject: { type: Type.STRING }, body: { type: Type.STRING } }, required: ['recipient', 'subject', 'body'] } },
+    { name: 'sendSlackMessage', description: "Sends a message to a Slack channel.", parameters: { type: Type.OBJECT, properties: { channel: { type: Type.STRING, description: "The Slack channel name, e.g., #general" }, message: { type: Type.STRING } }, required: ['channel', 'message'] } },
+
+    // E-commerce
+    { name: 'findProductPrice', description: "Finds the price of a product online.", parameters: { type: Type.OBJECT, properties: { productName: { type: Type.STRING } }, required: ['productName'] } },
+    { name: 'orderPizza', description: "Orders a pizza for delivery.", parameters: { type: Type.OBJECT, properties: { size: { type: Type.STRING, description: "Size of the pizza: 'small', 'medium', or 'large'" }, toppings: { type: Type.ARRAY, items: { type: Type.STRING } }, address: { type: Type.STRING, description: "Delivery address" } }, required: ['size', 'toppings', 'address'] } },
+
+    // Business Data
+    { name: 'getSalesData', description: "Retrieves sales data for a specified period.", parameters: { type: Type.OBJECT, properties: { timePeriod: { type: Type.STRING, description: "The period: 'daily', 'weekly', or 'quarterly'" } }, required: ['timePeriod'] } },
+    { name: 'getSupportTicket', description: "Retrieves a customer support ticket by its ID.", parameters: { type: Type.OBJECT, properties: { ticketId: { type: Type.STRING } }, required: ['ticketId'] } },
 ];
+
 // OpenAI format
 const openAIFunctionDeclarations: OpenAI.Chat.Completions.ChatCompletionTool[] = geminiFunctionDeclarations.map(f => ({
     type: 'function',
