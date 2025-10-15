@@ -35,6 +35,16 @@ export const useGeminiLive = (user: User | null) => {
   const nextStartTimeRef = useRef<number>(0);
   const pendingCitationsRef = useRef<any[] | null>(null);
 
+  // Auto-clear error after a delay
+  useEffect(() => {
+    if (error) {
+        const timer = setTimeout(() => {
+            setError(null);
+        }, 7000); // Clear error after 7 seconds
+        return () => clearTimeout(timer);
+    }
+  }, [error]);
+
   // Fetch initial data from Supabase when user is available
   useEffect(() => {
     if (!user) {
@@ -220,10 +230,10 @@ export const useGeminiLive = (user: User | null) => {
   const handleToolCall = useCallback(async (toolCall: any) => {
     if (!user) return;
     setIsProcessingTool(true);
-    try {
-        let toolResponseResult: any = "ok";
-        let systemMessageText: string | null = null;
+    let toolResponseResult: any = "ok";
+    let systemMessageText: string | null = null;
         
+    try {
         // --- Existing Features ---
         if (toolCall.name === 'createReminder') {
             const { task, dueDate, dueTime, priority } = toolCall.args as { task: string; dueDate?: string; dueTime?: string, priority?: 'High' | 'Medium' | 'Low' };
@@ -266,29 +276,49 @@ export const useGeminiLive = (user: User | null) => {
         
         // --- Image Generation ---
         else if (toolCall.name === 'generateImage') {
-            const { prompt } = toolCall.args;
-            systemMessageText = t('imageGenerationInProgress');
+            const { prompt, negativePrompt } = toolCall.args as { prompt: string, negativePrompt?: string };
+            const placeholderId = `img-placeholder-${Date.now()}`;
+            const placeholderEntry: TranscriptEntry = {
+                id: placeholderId,
+                speaker: 'maia',
+                text: t('imageGenerationInProgress'),
+                isFinal: false,
+                imageData: 'loading',
+            };
+            setTranscript(prev => [...prev, placeholderEntry]);
+
             try {
                 const { data, error } = await supabase.functions.invoke('generate-image', {
-                    body: { prompt, negativePrompt: toolCall.args.negativePrompt },
+                    body: { prompt, negativePrompt },
                 });
 
                 if (error) throw error;
+
+                const imageText = negativePrompt
+                    ? t('imageGeneratedWithNegative', { prompt, negativePrompt })
+                    : t('imageGenerated', { prompt });
                 
                 const newImageEntry: TranscriptEntry = {
                     speaker: 'maia',
-                    text: t('imageGenerated', { prompt }),
+                    text: imageText,
                     imageData: data.imageData,
                     isFinal: true,
                 };
-                setTranscript(prev => [...prev, newImageEntry]);
-                saveTranscriptEntry({ speaker: newImageEntry.speaker, text: newImageEntry.text });
+                
+                setTranscript(prev => {
+                    const newTranscript = prev.map(entry => entry.id === placeholderId ? newImageEntry : entry);
+                    saveTranscriptEntry({ speaker: newImageEntry.speaker, text: newImageEntry.text });
+                    return newTranscript;
+                });
                 toolResponseResult = "Image generated and displayed successfully.";
 
             } catch (err: any) {
                 console.error("Image generation error:", err);
                 toolResponseResult = "Sorry, I had trouble generating that image.";
+                setTranscript(prev => prev.filter(entry => entry.id !== placeholderId));
+                setError(toolResponseResult);
             }
+            systemMessageText = null; // We handled UI updates with the placeholder
         }
 
         // --- New Mocked Integration Features ---
@@ -323,11 +353,15 @@ export const useGeminiLive = (user: User | null) => {
              saveTranscriptEntry(newSystemEntry);
         }
 
+    } catch (err: any) {
+        console.error("Tool call processing error:", err);
+        setError(`An error occurred: ${err.message}`);
+        toolResponseResult = `Error: ${err.message}`;
+    } finally {
         if (wsRef.current) {
             const response = { type: 'toolResponse', payload: { functionResponses: { id: toolCall.id, name: toolCall.name, response: { result: toolResponseResult } } } };
             wsRef.current.send(JSON.stringify(response));
         }
-    } finally {
         setIsProcessingTool(false);
     }
   }, [user, addShoppingListItem, removeShoppingListItem, t, saveTranscriptEntry]);

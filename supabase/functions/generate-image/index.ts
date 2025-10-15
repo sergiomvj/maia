@@ -85,9 +85,10 @@ async function decrypt(encryptedData: string, secret: string): Promise<string> {
         imageData = response.generatedImages[0]?.image.imageBytes;
     } else if (profile.llm_provider === 'openai') {
         const openai = new OpenAI({ apiKey });
+        const finalPrompt = negativePrompt ? `${prompt}. Avoid the following: ${negativePrompt}.` : prompt;
         const response = await openai.images.generate({
             model: "dall-e-3",
-            prompt: prompt,
+            prompt: finalPrompt,
             n: 1,
             size: "1024x1024",
             response_format: 'b64_json',

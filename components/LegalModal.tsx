@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import React, { Fragment, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { LegalPageType, ActiveView } from '../types';
 
@@ -57,6 +57,7 @@ const parseText = (text: string, onNavigate?: (view: ActiveView) => void) => {
 
 const LegalModal: React.FC<LegalModalProps> = ({ page, onClose, onNavigate }) => {
   const { t } = useLanguage();
+  const mainContentRef = useRef<HTMLElement>(null);
 
   const content: { [key in LegalPageType]: { title: string; text: string } } = {
     about: { title: t('aboutTitle'), text: t('aboutText') },
@@ -66,6 +67,24 @@ const LegalModal: React.FC<LegalModalProps> = ({ page, onClose, onNavigate }) =>
   };
 
   const { title, text } = content[page];
+
+  const handleContentClick = (e: React.MouseEvent<HTMLElement>) => {
+    const target = e.target as HTMLElement;
+    const link = target.closest('a[href^="#"]');
+    const container = mainContentRef.current;
+
+    if (link && container) {
+      e.preventDefault();
+      const href = link.getAttribute('href');
+      if (href) {
+        const id = href.substring(1);
+        const element = container.querySelector(`#${id}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    }
+  };
 
   return (
     <div
@@ -82,7 +101,11 @@ const LegalModal: React.FC<LegalModalProps> = ({ page, onClose, onNavigate }) =>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
         </header>
-        <main className="p-6 md:p-8 overflow-y-auto">
+        <main 
+          ref={mainContentRef}
+          onClick={handleContentClick}
+          className="p-6 md:p-8 overflow-y-auto"
+        >
           <div className="prose dark:prose-invert max-w-none">
             {text.split('\n').map((paragraph, index) => {
               const trimmed = paragraph.trim();

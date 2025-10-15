@@ -41,7 +41,13 @@ const ChatBubble: React.FC<{ entry: TranscriptEntry }> = ({ entry }) => {
             </p>
             {entry.imageData && (
                 <div className="mt-2 p-1 bg-black/20 rounded-lg">
-                    <img src={`data:image/png;base64,${entry.imageData}`} alt={entry.text} className="rounded-md max-w-sm w-full" />
+                    {entry.imageData === 'loading' ? (
+                        <div className="rounded-md max-w-sm w-full aspect-square bg-gray-500/50 flex items-center justify-center animate-pulse">
+                            <Icon path={ICONS.image} className="w-16 h-16 text-gray-400/80" />
+                        </div>
+                    ) : (
+                        <img src={`data:image/png;base64,${entry.imageData}`} alt={entry.text} className="rounded-md max-w-sm w-full" />
+                    )}
                 </div>
             )}
         </div>
@@ -99,13 +105,19 @@ const ReminderItem: React.FC<{ reminder: Reminder; onToggle: (id: string) => voi
 };
 
 const NoteItem: React.FC<{ note: Note; onDelete: (id: string) => void }> = ({ note, onDelete }) => {
+    const { t } = useLanguage();
+    const handleDelete = () => {
+        if (window.confirm(t('confirmDeleteNote'))) {
+            onDelete(note.id);
+        }
+    };
     return (
         <div className="group flex items-start p-3 bg-gray-200/50 dark:bg-gray-700/50 rounded-lg">
             <div className="flex-grow">
                 <p className="text-sm text-gray-800 dark:text-gray-200">{note.content}</p>
                  <p className="text-xs text-gray-500 pt-1">{new Date(note.created_at).toLocaleString()}</p>
             </div>
-            <button onClick={() => onDelete(note.id)} className="ml-4 flex-shrink-0 text-gray-500 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Delete note">
+            <button onClick={handleDelete} className="ml-4 flex-shrink-0 text-gray-500 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Delete note">
                 <Icon path={ICONS.delete} className="w-5 h-5" />
             </button>
         </div>
@@ -186,7 +198,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ geminiLive }) => {
         {transcript.map((entry, index) => (
           <ChatBubble key={entry.id || index} entry={entry} />
         ))}
-         {isProcessingTool && (
+         {isProcessingTool && !transcript.some(e => e.imageData === 'loading') && (
             <div className="flex flex-col items-start">
                 <div className="max-w-xl px-4 py-2 rounded-2xl text-white bg-gray-600 dark:bg-gray-700 rounded-bl-none animate-pulse">
                     <p className="text-sm italic">{t('chatThinking')}</p>
@@ -196,7 +208,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ geminiLive }) => {
       </div>
 
       <div className="flex-shrink-0 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-        {error && <div className="text-red-500 text-center mb-4 text-sm">{error}</div>}
+        {error && <div className="text-center mb-4 text-sm p-3 bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 rounded-lg border border-red-300 dark:border-red-700">{error}</div>}
         
         <div className="flex items-center justify-center space-x-4">
           <Waveform isActive={isConnected && !isSpeaking} colorClass="bg-gray-400 dark:bg-gray-500" />

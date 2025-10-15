@@ -2,8 +2,7 @@ import React from 'react';
 import Icon from './Icon';
 import { ICONS } from '../constants';
 import { useLanguage } from '../contexts/LanguageContext';
-
-type ActiveView = 'chat' | 'agenda' | 'shoppingList' | 'profile';
+import { ActiveView } from '../types';
 
 interface BottomNavBarProps {
   activeView: ActiveView;
@@ -35,6 +34,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeView, setActiveView }
             <BottomNavItem icon={ICONS.dashboard} label={t('navChat')} isActive={activeView === 'chat'} onClick={() => setActiveView('chat')} />
             <BottomNavItem icon={ICONS.agenda} label={t('navAgenda')} isActive={activeView === 'agenda'} onClick={() => setActiveView('agenda')} />
             <BottomNavItem icon={ICONS.shoppingList} label={t('navShoppingList')} isActive={activeView === 'shoppingList'} onClick={() => setActiveView('shoppingList')} />
+            <BottomNavItem icon={ICONS.image} label={t('navGallery')} isActive={activeView === 'gallery'} onClick={() => setActiveView('gallery')} />
             <BottomNavItem icon={ICONS.profile} label={t('navProfile')} isActive={activeView === 'profile'} onClick={() => setActiveView('profile')} />
         </nav>
     );

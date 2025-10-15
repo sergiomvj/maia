@@ -3,7 +3,7 @@ import { User as SupabaseUser, Session as SupabaseSession } from '@supabase/supa
 export type User = SupabaseUser;
 export type Session = SupabaseSession;
 
-export type ActiveView = 'chat' | 'agenda' | 'shoppingList' | 'profile';
+export type ActiveView = 'chat' | 'agenda' | 'shoppingList' | 'profile' | 'gallery';
 
 export interface Profile {
   id: string;

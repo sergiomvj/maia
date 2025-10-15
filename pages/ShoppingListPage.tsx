@@ -61,8 +61,10 @@ const ShoppingListPage: React.FC<ShoppingListPageProps> = ({ geminiLive }) => {
   };
 
   const handleRemove = (name: string) => {
-    removeShoppingListItem(name);
-    playClearSound();
+    if (window.confirm(t('confirmRemoveItem', { item: name }))) {
+        removeShoppingListItem(name);
+        playClearSound();
+    }
   };
   
   const activeItems = shoppingList.filter(i => !i.is_collected);

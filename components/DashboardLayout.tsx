@@ -4,6 +4,7 @@ import ChatInterface from './ChatInterface';
 import AgendaPage from '../pages/AgendaPage';
 import ShoppingListPage from '../pages/ShoppingListPage';
 import ProfilePage from '../pages/ProfilePage';
+import GalleryPage from '../pages/GalleryPage';
 import ThemeToggle from './ThemeToggle';
 import LanguageSelector from './LanguageSelector';
 import Logo from './Logo';
@@ -54,6 +55,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ user, onLogout, onSho
         return <ShoppingListPage geminiLive={geminiLive} />;
        case 'profile':
         return <ProfilePage user={user} onLogout={onLogout} />;
+       case 'gallery':
+        return <GalleryPage geminiLive={geminiLive} />;
       case 'chat':
       default:
         return <ChatInterface geminiLive={geminiLive} />;
@@ -65,6 +68,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ user, onLogout, onSho
       agenda: t('navAgenda'),
       shoppingList: t('navShoppingList'),
       profile: t('navProfile'),
+      gallery: t('navGallery'),
   }
 
   return (
@@ -78,6 +82,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ user, onLogout, onSho
           <NavItem icon={ICONS.dashboard} label={t('navChat')} isActive={activeView === 'chat'} onClick={() => setActiveView('chat')} />
           <NavItem icon={ICONS.agenda} label={t('navAgenda')} isActive={activeView === 'agenda'} onClick={() => setActiveView('agenda')} />
           <NavItem icon={ICONS.shoppingList} label={t('navShoppingList')} isActive={activeView === 'shoppingList'} onClick={() => setActiveView('shoppingList')} />
+          <NavItem icon={ICONS.image} label={t('navGallery')} isActive={activeView === 'gallery'} onClick={() => setActiveView('gallery')} />
         </nav>
         <div className="px-2 py-4 border-t border-gray-200 dark:border-gray-700">
            <div className="space-y-2">
