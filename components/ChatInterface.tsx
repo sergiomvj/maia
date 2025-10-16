@@ -1,10 +1,13 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import Icon from './Icon';
 import Waveform from './Waveform';
 import { ICONS, PRIORITY_COLORS } from '../constants';
 import { TranscriptEntry, Reminder, Note } from '../types';
 import { useGeminiLive } from '../hooks/useGeminiLive';
 import { useLanguage } from '../contexts/LanguageContext';
+import { supabase } from '../supabaseClient';
+import { useChatHistory } from '../hooks/useChatHistory';
+import ChatHistoryList from './ChatHistoryList';
 
 type GeminiLiveHook = ReturnType<typeof useGeminiLive>;
 
@@ -130,11 +133,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ geminiLive }) => {
   const { t } = useLanguage();
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const { items: historyItems, load: loadHistory, loadMore: loadMoreHistory, hasMore: hasMoreHistory } = useChatHistory(supabase);
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [transcript, isProcessingTool]);
+
+  useEffect(() => {
+    loadHistory({ limit: 30 });
+  }, [loadHistory]);
 
   const handleToggleConnection = () => {
     if (isConnected || isConnecting) {
@@ -189,11 +198,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ geminiLive }) => {
       
       <div ref={scrollRef} className="flex-grow p-4 md:p-6 space-y-4 overflow-y-auto bg-gray-50 dark:bg-gray-800/50">
         {transcript.length === 0 && !isConnected && !isLoadingData && (
-            <div className="text-center text-gray-500 dark:text-gray-400 flex flex-col items-center justify-center h-full">
-                <Icon path={ICONS.robot} className="w-16 h-16 mb-4 text-gray-400 dark:text-gray-500" />
-                <h2 className="text-xl font-semibold">{t('chatReady')}</h2>
-                <p>{t('chatReadyPrompt')}</p>
-            </div>
+          <div className="text-center text-gray-500 dark:text-gray-400 flex flex-col items-center justify-center h-full">
+            <Icon path={ICONS.robot} className="w-16 h-16 mb-4 text-gray-400 dark:text-gray-500" />
+            <h2 className="text-xl font-semibold">{t('chatReady')}</h2>
+            <p>{t('chatReadyPrompt')}</p>
+          </div>
         )}
         {transcript.map((entry, index) => (
           <ChatBubble key={entry.id || index} entry={entry} />
@@ -204,6 +213,23 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ geminiLive }) => {
                     <p className="text-sm italic">{t('chatThinking')}</p>
                 </div>
             </div>
+        )}
+      </div>
+
+      <div className="flex-shrink-0 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <div className="flex items-center mb-3">
+          <Icon path={ICONS.dashboard} className="w-5 h-5 mr-2 text-gray-500 dark:text-gray-400" />
+          <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">{t('chatHistory') || 'Chat History'}</h3>
+        </div>
+        <div className="max-h-72 overflow-y-auto pr-1">
+          <ChatHistoryList items={historyItems} />
+        </div>
+        {hasMoreHistory && (
+          <div className="mt-3">
+            <button onClick={() => loadMoreHistory()} className="text-xs px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200">
+              {t('loadMore') || 'Load more'}
+            </button>
+          </div>
         )}
       </div>
 

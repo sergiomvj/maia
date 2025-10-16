@@ -10,6 +10,43 @@ const INPUT_SAMPLE_RATE = 16000;
 const OUTPUT_SAMPLE_RATE = 24000;
 const SCRIPT_PROCESSOR_BUFFER_SIZE = 4096;
 
+// Helpers to call Supabase Edge Functions with the user's JWT
+const getFunctionsBaseUrl = () => {
+  const fallback = (import.meta as any).env?.VITE_SUPABASE_URL || '';
+  const raw = supabase.realtime.conn?.url || fallback;
+  try {
+    const u = new URL(raw);
+    return `https://${u.hostname}/functions/v1`;
+  } catch {
+    if (fallback) {
+      try {
+        const u = new URL(fallback);
+        return `${u.origin}/functions/v1`;
+      } catch {}
+    }
+    throw new Error('Supabase URL not configured');
+  }
+};
+
+const authHeaders = async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('Not authenticated');
+  return {
+    Authorization: `Bearer ${session.access_token}`,
+    'Content-Type': 'application/json',
+  } as Record<string, string>;
+};
+
+const efFetch = async (path: string, init: RequestInit) => {
+  const headers = await authHeaders();
+  const res = await fetch(`${getFunctionsBaseUrl()}${path}`, { ...init, headers: { ...headers, ...(init.headers || {}) } });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `Request failed: ${res.status}`);
+  }
+  return res;
+};
+
 export const useGeminiLive = (user: User | null) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
@@ -61,28 +98,23 @@ export const useGeminiLive = (user: User | null) => {
       setIsLoadingData(true);
       setError(null);
       try {
-        const [remindersRes, notesRes, shoppingListRes, chatHistoryRes] = await Promise.all([
-          supabase.from('reminders').select('*').order('created_at', { ascending: false }),
-          supabase.from('notes').select('*').order('created_at', { ascending: false }),
-          supabase.from('shopping_list_items').select('*').order('created_at', { ascending: false }),
+        const [remindersEF, notesEF, shoppingListEF, chatHistoryRes] = await Promise.all([
+          efFetch('/reminders?limit=200', { method: 'GET' }).then(r => r.json()),
+          efFetch('/notes?limit=200', { method: 'GET' }).then(r => r.json()),
+          efFetch('/shopping-list-items?limit=200', { method: 'GET' }).then(r => r.json()),
           supabase.from('chat_history').select('*').order('created_at', { ascending: false }).limit(100)
         ]);
 
-        if (remindersRes.error) throw new Error(`Reminders: ${remindersRes.error.message}`);
-        setReminders(remindersRes.data || []);
-        
-        if (notesRes.error) throw new Error(`Notes: ${notesRes.error.message}`);
-        setNotes(notesRes.data || []);
-        
-        if (shoppingListRes.error) throw new Error(`Shopping List: ${shoppingListRes.error.message}`);
-        setShoppingList(shoppingListRes.data || []);
-        
+        setReminders(remindersEF.data || []);
+        setNotes(notesEF.data || []);
+        setShoppingList(shoppingListEF.data || []);
+
         if (chatHistoryRes.error) throw new Error(`Chat History: ${chatHistoryRes.error.message}`);
         const loadedTranscript = (chatHistoryRes.data || []).reverse().map((entry: ChatHistoryEntry) => ({
-            id: entry.id,
-            speaker: entry.speaker,
-            text: entry.text,
-            isFinal: true,
+          id: entry.id,
+          speaker: entry.speaker,
+          text: entry.text,
+          isFinal: true,
         }));
         
         const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'there';
@@ -126,8 +158,9 @@ export const useGeminiLive = (user: User | null) => {
     if (!reminder) return;
     const newStatus = !reminder.is_completed;
     setReminders(prev => prev.map(r => r.id === id ? { ...r, is_completed: newStatus } : r));
-    const { error } = await supabase.from('reminders').update({ is_completed: newStatus }).eq('id', id);
-    if (error) {
+    try {
+      await efFetch(`/reminders?id=${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify({ is_completed: newStatus }) });
+    } catch (error) {
       console.error('Failed to update reminder:', error);
       setReminders(prev => prev.map(r => r.id === id ? { ...r, is_completed: !newStatus } : r));
       setError('Failed to update reminder.');
@@ -137,8 +170,9 @@ export const useGeminiLive = (user: User | null) => {
   const deleteReminder = useCallback(async (id: string) => {
     const originalReminders = reminders;
     setReminders(prev => prev.filter(r => r.id !== id));
-    const { error } = await supabase.from('reminders').delete().eq('id', id);
-    if (error) {
+    try {
+      await efFetch(`/reminders?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+    } catch (error) {
         console.error('Failed to delete reminder:', error);
         setReminders(originalReminders);
         setError('Failed to delete reminder.');
@@ -148,8 +182,9 @@ export const useGeminiLive = (user: User | null) => {
   const deleteNote = useCallback(async (id: string) => {
     const originalNotes = notes;
     setNotes(prev => prev.filter(note => note.id !== id));
-    const { error } = await supabase.from('notes').delete().eq('id', id);
-    if (error) {
+    try {
+      await efFetch(`/notes?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+    } catch (error) {
       console.error('Failed to delete note:', error);
       setNotes(originalNotes);
       setError('Failed to delete note.');
@@ -162,17 +197,19 @@ export const useGeminiLive = (user: User | null) => {
     if (existingItem) {
         const newQuantity = existingItem.quantity + quantity;
         setShoppingList(prev => prev.map(i => i.id === existingItem.id ? { ...i, quantity: newQuantity } : i));
-        const { error } = await supabase.from('shopping_list_items').update({ quantity: newQuantity }).eq('id', existingItem.id);
-        if (error) {
+        try {
+            await efFetch(`/shopping-list-items?id=${encodeURIComponent(existingItem.id)}`, { method: 'PUT', body: JSON.stringify({ quantity: newQuantity }) });
+        } catch (error) {
             console.error('Failed to update shopping list item:', error);
             setShoppingList(prev => prev.map(i => i.id === existingItem.id ? { ...i, quantity: existingItem.quantity } : i));
         }
     } else {
-        const { data, error } = await supabase.from('shopping_list_items').insert({ user_id: user.id, item, quantity }).select().single();
-        if (error) {
+        try {
+            const res = await efFetch('/shopping-list-items', { method: 'POST', body: JSON.stringify({ item, quantity }) });
+            const { data } = await res.json();
+            if (data) setShoppingList(prev => [data, ...prev]);
+        } catch (error) {
             console.error('Failed to add shopping list item:', error);
-        } else if (data) {
-            setShoppingList(prev => [data, ...prev]);
         }
     }
   }, [shoppingList, user]);
@@ -182,8 +219,9 @@ export const useGeminiLive = (user: User | null) => {
     if (!itemToRemove) return;
     const originalList = shoppingList;
     setShoppingList(prev => prev.filter(i => i.id !== itemToRemove.id));
-    const { error } = await supabase.from('shopping_list_items').delete().eq('id', itemToRemove.id);
-    if (error) {
+    try {
+        await efFetch(`/shopping-list-items?id=${encodeURIComponent(itemToRemove.id)}`, { method: 'DELETE' });
+    } catch (error) {
         console.error('Failed to remove shopping list item:', error);
         setShoppingList(originalList);
     }
@@ -194,8 +232,9 @@ export const useGeminiLive = (user: User | null) => {
     if (!item) return;
     const newStatus = !item.is_collected;
     setShoppingList(prev => prev.map(i => i.id === id ? { ...i, is_collected: newStatus } : i));
-    const { error } = await supabase.from('shopping_list_items').update({ is_collected: newStatus }).eq('id', id);
-    if (error) {
+    try {
+      await efFetch(`/shopping-list-items?id=${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify({ is_collected: newStatus }) });
+    } catch (error) {
       console.error('Failed to update shopping list item:', error);
       setShoppingList(prev => prev.map(i => i.id === id ? { ...i, is_collected: !newStatus } : i));
     }
@@ -237,14 +276,26 @@ export const useGeminiLive = (user: User | null) => {
         // --- Existing Features ---
         if (toolCall.name === 'createReminder') {
             const { task, dueDate, dueTime, priority } = toolCall.args as { task: string; dueDate?: string; dueTime?: string, priority?: 'High' | 'Medium' | 'Low' };
-            const { data: newReminder, error } = await supabase.from('reminders').insert({ task, due_date: dueDate, due_time: dueTime, priority: priority || 'Medium', user_id: user.id }).select().single();
-            if (error) { console.error('DB Error:', error); toolResponseResult = "Failed to save reminder."; }
-            else if (newReminder) { setReminders(prev => [newReminder, ...prev]); systemMessageText = t('reminderSet', { task }); playSuccessSound(); }
+            try {
+                const res = await efFetch('/reminders', { method: 'POST', body: JSON.stringify({ task, due_date: dueDate, due_time: dueTime, priority: priority || 'Medium' }) });
+                const { data: newReminder } = await res.json();
+                if (newReminder) { setReminders(prev => [newReminder, ...prev]); systemMessageText = t('reminderSet', { task }); playSuccessSound(); }
+                toolResponseResult = 'Reminder saved.';
+            } catch (err) {
+                console.error('EF Error:', err);
+                toolResponseResult = 'Failed to save reminder.';
+            }
         } else if (toolCall.name === 'saveNote') {
             const { content } = toolCall.args as { content: string };
-            const { data: newNote, error } = await supabase.from('notes').insert({ content, user_id: user.id }).select().single();
-            if (error) { console.error('DB Error:', error); toolResponseResult = "Failed to save note."; }
-            else if (newNote) { setNotes(prev => [newNote, ...prev]); systemMessageText = t('noteSaved'); playSuccessSound(); }
+            try {
+                const res = await efFetch('/notes', { method: 'POST', body: JSON.stringify({ content }) });
+                const { data: newNote } = await res.json();
+                if (newNote) { setNotes(prev => [newNote, ...prev]); systemMessageText = t('noteSaved'); playSuccessSound(); }
+                toolResponseResult = 'Note saved.';
+            } catch (err) {
+                console.error('EF Error:', err);
+                toolResponseResult = 'Failed to save note.';
+            }
         } else if (toolCall.name === 'addShoppingListItem') {
             const { item, quantity } = toolCall.args as { item: string; quantity?: number };
             await addShoppingListItem(item, quantity);
@@ -384,8 +435,16 @@ export const useGeminiLive = (user: User | null) => {
       inputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: INPUT_SAMPLE_RATE });
       outputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: OUTPUT_SAMPLE_RATE });
       
-      const supabaseUrl = new URL(supabase.realtime.conn?.url ?? '');
-      const wsUrl = `wss://${supabaseUrl.hostname}/functions/v1/proxy-live-session`;
+      const rawBase = supabase.realtime.conn?.url || (import.meta as any).env?.VITE_SUPABASE_URL || '';
+      let wsUrl: string;
+      try {
+        const u = new URL(rawBase);
+        wsUrl = `wss://${u.hostname}/functions/v1/proxy-live-session`;
+      } catch {
+        if (!rawBase) throw new Error('Supabase URL not configured');
+        const u = new URL(rawBase);
+        wsUrl = `wss://${u.hostname}/functions/v1/proxy-live-session`;
+      }
       
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
@@ -413,6 +472,11 @@ export const useGeminiLive = (user: User | null) => {
             };
             source.connect(scriptProcessor);
             scriptProcessor.connect(inputAudioContextRef.current!.destination);
+        } else if (message.type === 'ping') {
+            // Respond to heartbeat to keep the session alive
+            if (wsRef.current?.readyState === WebSocket.OPEN) {
+              wsRef.current.send(JSON.stringify({ type: 'pong' }));
+            }
         } else if (message.type === 'error') {
             setError(message.payload);
             closeSession();

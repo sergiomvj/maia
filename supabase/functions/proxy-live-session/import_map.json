@@ -1,0 +1,11 @@
+{
+  "imports": {
+    "https": "https://deno.land/std@0.177.0/node/https.ts",
+    "http": "https://deno.land/std@0.177.0/node/http.ts",
+    "events": "https://deno.land/std@0.177.0/node/events.ts",
+    "stream": "https://deno.land/std@0.177.0/node/stream.ts",
+    "util": "https://deno.land/std@0.177.0/node/util.ts",
+    "@google/genai": "https://esm.sh/@google/genai@1.21.0",
+    "openai": "https://esm.sh/openai@4.52.7"
+  }
+}

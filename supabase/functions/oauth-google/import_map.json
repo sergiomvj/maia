@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai@1.21.0",
+    "openai": "https://esm.sh/openai@4.52.7"
+  }
+}
