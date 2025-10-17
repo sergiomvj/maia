@@ -15,11 +15,11 @@ COPY . .
 # Args de build para Vite (VITE_* são embutidos no build)
 ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_ANON_KEY
-ENV VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
-ENV VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
 
 # Build (saída em dist/)
-RUN npm run build
+RUN VITE_SUPABASE_URL=$VITE_SUPABASE_URL \
+    VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY \
+    npm run build
 
 # 2) Runtime: Nginx estático com fallback SPA
 FROM nginx:alpine AS runtime
