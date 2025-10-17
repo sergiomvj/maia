@@ -12,13 +12,19 @@ RUN if [ -f package-lock.json ]; then npm ci; \
 # Copia o código
 COPY . .
 
-# Args de build para Vite (VITE_* são embutidos no build)
+# Args de build para Vite (fallback caso .env.production não exista)
 ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_ANON_KEY
 
 # Build (saída em dist/)
-RUN VITE_SUPABASE_URL=$VITE_SUPABASE_URL \
-    VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY \
+# Preferir .env.production (não commitado com segredos) e cair para build args se ausente
+RUN if [ -f .env.production ]; then \
+      set -a; \
+      . ./.env.production; \
+      set +a; \
+    fi; \
+    : "${VITE_SUPABASE_URL:?VITE_SUPABASE_URL not set (provide in .env.production or as build-arg)}"; \
+    : "${VITE_SUPABASE_ANON_KEY:?VITE_SUPABASE_ANON_KEY not set (provide in .env.production or as build-arg)}"; \
     npm run build
 
 # 2) Runtime: Nginx estático com fallback SPA
