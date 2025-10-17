@@ -44,7 +44,7 @@ create or replace function public.upsert_note_embedding(p_note_id uuid, p_conten
 returns void
 language sql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
   insert into public.notes_embeddings(note_id, content, embedding)
   values (p_note_id, p_content, p_embedding)
@@ -57,7 +57,7 @@ create or replace function public.search_notes_by_embedding(p_embedding vector, 
 returns table(note_id uuid, distance float4)
 language sql
 stable
-set search_path = public
+set search_path = public, extensions
 as $$
   select ne.note_id, (ne.embedding <-> p_embedding) as distance
   from public.notes_embeddings ne
